@@ -85,7 +85,6 @@ llm-atomic-wiki/
 ├── STORY.md               ← the personal story of running it end-to-end
 ├── METHODOLOGY.md         ← 6-phase pipeline
 ├── CLAUDE.md              ← schema for the LLM operating this repo
-├── LICENSE
 │
 ├── raw/                   ← drop your source materials here (gitignored)
 │
@@ -156,11 +155,11 @@ A frame that I think gets undersold: Karpathy's real contribution isn't wiki qua
 
 ---
 
-## Credit & License
+## Credit
 
 The pattern, the schema, the operations (Ingest / Query / Lint), the philosophy of compile-over-retrieve — all that is **[Andrej Karpathy's](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)**. If you find this repo useful, his gist is the thing to read first.
 
-This repo is MIT-licensed — see [LICENSE](LICENSE) — and consists of:
+What this repo adds on top:
 - Four small additions to Karpathy's pattern (atom layer, topic-branches, two-layer Lint, parallel-compile lock)
 - A reference implementation methodology
 - A bilingual README and a story doc
