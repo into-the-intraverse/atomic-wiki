@@ -1,0 +1,46 @@
+# ─── Personal content (the whole point of this repo is the framework, not your content) ───
+
+# Raw source materials
+raw/*
+!raw/README.md
+!raw/.gitkeep
+
+# Atom branches (one folder per topic at the repo root)
+# Edit this list to match your branch names. The reference implementation
+# uses these 11 branches:
+ai-agent/
+ai-skills/
+career-mindset/
+claude-code/
+context-engineering/
+developer-workflow/
+harness-engineering/
+mcp/
+product-business/
+self-media/
+vibe-coding/
+
+# Compiled wiki pages
+wiki/*
+!wiki/.gitkeep
+
+# Auto-generated artifacts
+index.md
+log.md
+lint-report.md
+
+# Personal notes / analysis (not for the public repo)
+GAP-ANALYSIS.md
+
+# ─── Python / OS / editor noise ───
+Python/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.obsidian/
