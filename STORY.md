@@ -6,8 +6,6 @@ He wrote the pattern up as a gist. Ten-thousand-plus stars. But it's an idea fil
 
 I did.
 
-🇹🇼 [中文原文](STORY.zh-TW.md)
-
 
 ## Scale
 

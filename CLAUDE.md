@@ -12,9 +12,10 @@ Three storage layers, one navigation layer, one log layer:
 
 ```
 raw/                  sources you may read but never write
-<branch-1>/           topic-branch folders at the repo root
-<branch-2>/           one folder per topic, each contains atoms
-...                   (atoms are the source of truth)
+atoms/                knowledge atoms, organized by topic-branch
+  <branch-1>/         one folder per topic
+  <branch-2>/         each contains atoms (source of truth)
+  ...
 wiki/                 compiled pages from atoms, derived cache
 index.md              auto-generated wiki navigation
 log.md                append-only change history
@@ -22,7 +23,7 @@ log.md                append-only change history
 
 Atoms are immutable. Wiki is rebuildable from atoms. If a wiki page is wrong, fix the underlying atom and recompile, never patch the wiki.
 
-Branches live at the repo root, not inside an `atoms/` wrapper. This matches the reference implementation. Each branch folder contains atoms for that topic, plus an optional `_archive/` for superseded atoms.
+Each branch folder under `atoms/` holds the atoms for that topic, plus an optional `_archive/` for superseded atoms.
 
 ---
 
@@ -77,12 +78,12 @@ Atoms are immutable. Do not edit after creation.
 When knowledge evolves:
 1. Create a new atom with the updated claim.
 2. Add `superseded_by: <new-atom-id>` to the old atom's frontmatter.
-3. Move the old atom to `<branch>/_archive/`.
+3. Move the old atom to `atoms/<branch>/_archive/`.
 4. Recompile any wiki page that referenced the old atom.
 
 Never delete an atom outright. Use `_archive/`. Final deletion is a separate, conscious decision.
 
-See `templates/atom.md` for a copyable starter.
+See `atoms/_template.md` for a copyable starter.
 
 ---
 
@@ -145,7 +146,7 @@ In time-sensitive claims, use one of:
 
 Avoid bare `currently` / `latest` / `now` / `目前` / `現在` in time-sensitive contexts. Lint regex flags only `<temporal word> <version/date>` combinations to avoid false-positive flooding from rhetorical use.
 
-See `templates/wiki-page.md` for a copyable starter.
+See `wiki/_template.md` for a copyable starter.
 
 ---
 
@@ -191,7 +192,7 @@ You execute four operations on demand:
 
 ### Ingest
 
-User adds new material to `raw/` (or any source location). You read it, classify each segment ("extract" / "skip" / "deferred"), then extract the "extract" segments into atoms in the matching `<branch>/` folder.
+User adds new material to `raw/` (or any source location). You read it, classify each segment ("extract" / "skip" / "deferred"), then extract the "extract" segments into atoms under the matching `atoms/<branch>/` folder.
 
 Constraints:
 - One atom equals one claim.

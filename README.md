@@ -82,26 +82,25 @@ Atoms are where the real work happens. Wiki is rebuildable from atoms; atoms are
 llm-atomic-wiki/
 ├── README.md              ← you are here
 ├── README.zh-TW.md        ← Chinese version
-├── STORY.md / STORY.zh-TW.md  ← the personal story, bilingual
-├── METHODOLOGY.md         ← 6-phase pipeline (English)
-├── METHODOLOGY.zh-TW.md   ← original Chinese methodology
+├── STORY.md               ← the personal story of running it end-to-end
+├── METHODOLOGY.md         ← 6-phase pipeline
 ├── CLAUDE.md              ← schema for the LLM operating this repo
 ├── LICENSE
 │
 ├── raw/                   ← drop your source materials here (gitignored)
 │
-├── <branch-1>/            ← one folder per topic-branch, atoms inside (gitignored)
-├── <branch-2>/            ← e.g. ai-agent/, ai-skills/, mcp/, ...
-├── ...
+├── atoms/                 ← knowledge atoms, organized by topic-branch (gitignored)
+│   ├── README.md
+│   ├── _template.md       ← copy when creating a new atom
+│   ├── <branch-1>/        ← one folder per topic-branch
+│   ├── <branch-2>/        ← e.g. ai-agent/, ai-skills/, mcp/, ...
+│   └── ...
 │
 ├── wiki/                  ← compiled pages, flat (gitignored)
+│   └── _template.md       ← copy when creating a new wiki page
 │
 ├── index.md               ← auto-generated navigation (gitignored)
 ├── log.md                 ← change log, append-only (gitignored)
-│
-├── templates/
-│   ├── atom.md            ← copy when creating a new atom
-│   └── wiki-page.md       ← copy when creating a new wiki page
 │
 └── scripts/
     ├── lint.sh            ← programmatic Lint
@@ -138,7 +137,6 @@ The whole loop is `Ingest → Compile → Index/Log → Lint → Query`. Re-run 
 
 - **[STORY.md](STORY.md)** — the personal story: why I ran it, what worked, what surprised me.
 - **[METHODOLOGY.md](METHODOLOGY.md)** — the six-phase pipeline (skeleton → segment-classify → extract → quality pass → external check → wiki compile) and the three maintenance operations.
-- **[METHODOLOGY.zh-TW.md](METHODOLOGY.zh-TW.md)** — the original Chinese methodology document, longer-form.
 - **[CLAUDE.md](CLAUDE.md)** — the formal spec for any LLM operating this repo.
 
 ---

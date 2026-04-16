@@ -63,7 +63,7 @@ Each phase can run independently. You can stop at atoms, or skip atoms and go st
 
 ### Operation
 1. List the topics your knowledge covers (doesn't need to be perfect — iterate)
-2. Create one folder per topic ("branch") at the repo root (e.g. `ai-agent/`, `mcp/`)
+2. Create one folder per topic ("branch") under `atoms/` (e.g. `atoms/ai-agent/`, `atoms/mcp/`)
 3. Write a short note describing each branch's definition and boundary (in `STORY.md` or your own notes)
 
 ### Branch design principles

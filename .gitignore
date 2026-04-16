@@ -5,23 +5,15 @@ raw/*
 !raw/README.md
 !raw/.gitkeep
 
-# Atom branches (one folder per topic at the repo root)
-# Edit this list to match your branch names. The reference implementation
-# uses these 11 branches:
-ai-agent/
-ai-skills/
-career-mindset/
-claude-code/
-context-engineering/
-developer-workflow/
-harness-engineering/
-mcp/
-product-business/
-self-media/
-vibe-coding/
+# Atoms — all topic-branches and their contents are yours, not for the public repo
+atoms/*
+!atoms/README.md
+!atoms/_template.md
+!atoms/.gitkeep
 
 # Compiled wiki pages
 wiki/*
+!wiki/_template.md
 !wiki/.gitkeep
 
 # Auto-generated artifacts
