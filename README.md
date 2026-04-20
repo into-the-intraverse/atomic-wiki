@@ -165,3 +165,9 @@ What this repo adds on top:
 - A bilingual README and a story doc
 
 If you fork it and find it useful, a star on Karpathy's original gist is more deserved than one on this repo.
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=cablate/llm-atomic-wiki&type=Date)](https://star-history.com/#cablate/llm-atomic-wiki&Date)

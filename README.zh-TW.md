@@ -165,3 +165,9 @@ Pattern、schema、操作（Ingest / Query / Lint）、compile > retrieve 的核
 - 雙語 README 跟故事文件
 
 fork 後覺得有用的話，去他的 gist 點星比點我的 repo 更該。
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=cablate/llm-atomic-wiki&type=Date)](https://star-history.com/#cablate/llm-atomic-wiki&Date)
