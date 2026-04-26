@@ -1,7 +1,7 @@
 #!/bin/bash
-# Wiki Lint - Programmatic Layer
-# 檢查四項：ghost links、orphan pages、format violations、outdated markers
-# 產出 lint-report.md
+# Wiki Lint — Programmatic Layer
+# Checks: ghost links, orphan pages, format violations, outdated markers.
+# Output: lint-report.md at repo root.
 
 WIKI_DIR="$(cd "$(dirname "$0")/../wiki" && pwd)"
 REPORT="$WIKI_DIR/../lint-report.md"
@@ -13,30 +13,26 @@ echo "" >> "$REPORT"
 echo "> Generated: $(date '+%Y-%m-%d %H:%M')" >> "$REPORT"
 echo "" >> "$REPORT"
 
-# Collect all wiki slugs (filename without .md)
+# Collect wiki slugs as <branch>/<page>, mirroring wiki/<branch>/<page>.md.
 declare -A SLUGS
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  # Skip index and log
-  [[ "$slug" == "index" || "$slug" == "log" ]] && continue
+while IFS= read -r f; do
+  rel="${f#$WIKI_DIR/}"
+  slug="${rel%.md}"
+  base="$(basename "$slug")"
+  case "$base" in
+    _template|README) continue ;;
+  esac
   SLUGS["$slug"]=1
-done
+done < <(find "$WIKI_DIR" -type f -name '*.md')
 
 # ─── 1. Ghost Links ───
-# Find [[links]] that point to non-existent pages
-echo "## 1. Ghost Links（指向不存在頁面的連結）" >> "$REPORT"
+echo "## 1. Ghost Links (links pointing to non-existent pages)" >> "$REPORT"
 echo "" >> "$REPORT"
 FOUND_GHOST=0
 
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  [[ "$slug" == "index" || "$slug" == "log" ]] && continue
-
-  # Extract all [[...]] links
+for slug in "${!SLUGS[@]}"; do
+  f="$WIKI_DIR/$slug.md"
   while IFS= read -r link; do
-    # Strip the display text if present (e.g. [[slug|display]])
     target="${link%%|*}"
     if [[ -z "${SLUGS[$target]}" ]]; then
       echo "- \`$slug\` → \`[[$target]]\` (not found)" >> "$REPORT"
@@ -52,22 +48,17 @@ fi
 echo "" >> "$REPORT"
 
 # ─── 2. Orphan Pages ───
-# Pages with zero incoming links from other wiki pages
-echo "## 2. Orphan Pages（沒有任何頁面連結過來的頁面）" >> "$REPORT"
+echo "## 2. Orphan Pages (no incoming links from other wiki pages)" >> "$REPORT"
 echo "" >> "$REPORT"
 FOUND_ORPHAN=0
 
-# Collect all outgoing links
 declare -A INCOMING
 for slug in "${!SLUGS[@]}"; do
   INCOMING["$slug"]=0
 done
 
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  [[ "$slug" == "index" || "$slug" == "log" ]] && continue
-
+for slug in "${!SLUGS[@]}"; do
+  f="$WIKI_DIR/$slug.md"
   while IFS= read -r link; do
     target="${link%%|*}"
     if [[ -n "${SLUGS[$target]}" ]]; then
@@ -90,16 +81,14 @@ fi
 echo "" >> "$REPORT"
 
 # ─── 3. Format Violations ───
-echo "## 3. Format Violations（格式違規）" >> "$REPORT"
+echo "## 3. Format Violations" >> "$REPORT"
 echo "" >> "$REPORT"
 FOUND_FORMAT=0
 
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  [[ "$slug" == "index" || "$slug" == "log" ]] && continue
+for slug in "${!SLUGS[@]}"; do
+  f="$WIKI_DIR/$slug.md"
 
-  # 3a. First line must be # title
+  # 3a. First line must be `# title`
   first_line=$(head -1 "$f")
   if [[ ! "$first_line" =~ ^#\  ]]; then
     echo "- \`$slug\`: first line is not \`# title\` → \`$first_line\`" >> "$REPORT"
@@ -107,15 +96,19 @@ for f in "$WIKI_DIR"/*.md; do
     ((ERRORS++))
   fi
 
-  # 3b. Filename must be lowercase with hyphens only
+  # 3b. Path components must be lowercase with hyphens only
   if [[ "$slug" =~ [A-Z_] ]]; then
-    echo "- \`$slug\`: filename contains uppercase or underscore" >> "$REPORT"
+    echo "- \`$slug\`: path contains uppercase or underscore" >> "$REPORT"
     FOUND_FORMAT=1
     ((ERRORS++))
   fi
 
-  # 3c. Check for raw URLs in wiki links (should be [[slug]] not [text](url))
-  # This is a soft check — markdown links to external sites are fine
+  # 3c. Wiki page must live in a branch subfolder (slug must contain at least one /)
+  if [[ "$slug" != */* ]]; then
+    echo "- \`$slug\`: wiki page must live in a branch subfolder (wiki/<branch>/<slug>.md)" >> "$REPORT"
+    FOUND_FORMAT=1
+    ((ERRORS++))
+  fi
 done
 
 if [ $FOUND_FORMAT -eq 0 ]; then
@@ -124,19 +117,16 @@ fi
 echo "" >> "$REPORT"
 
 # ─── 4. Outdated Markers ───
-# Only flag temporal words that carry version/tool-specific claims likely to expire.
-# Generic narrative uses of 現在/目前 (historical contrast, rhetorical) are intentionally excluded.
-echo "## 4. Outdated Markers（時效性用語）" >> "$REPORT"
+# Tight patterns only — flag temporal claims tied to specific versions/release events
+# that are likely to expire. Generic rhetorical "currently"/"now" is intentionally excluded.
+echo "## 4. Outdated Markers (time-sensitive language)" >> "$REPORT"
 echo "" >> "$REPORT"
 FOUND_OUTDATED=0
 
-PATTERNS='最新版|目前最新|currently v|latest v|just released|剛出|剛推出|截至 [0-9]{4}'
+PATTERNS='currently v[0-9]|latest v[0-9]|just released|recently released|brand new|newly released'
 
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  [[ "$slug" == "index" || "$slug" == "log" ]] && continue
-
+for slug in "${!SLUGS[@]}"; do
+  f="$WIKI_DIR/$slug.md"
   matches=$(grep -nE "$PATTERNS" "$f" 2>/dev/null)
   if [ -n "$matches" ]; then
     echo "### \`$slug\`" >> "$REPORT"

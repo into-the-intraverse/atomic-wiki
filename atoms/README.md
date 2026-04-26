@@ -12,7 +12,6 @@ atoms/
 ├── <branch-1>/              ← one folder per topic-branch
 │   ├── 2026-01-15-some-claim.md
 │   ├── 2026-02-03-another-claim.md
-│   ├── _archive/            ← superseded atoms live here
 │   └── ...
 │
 ├── <branch-2>/
@@ -35,6 +34,12 @@ Karpathy's original LLM Wiki goes `raw → wiki` directly. The atom layer is thi
 
 When a wiki page is wrong, you fix the underlying atom and recompile. You never patch the wiki directly.
 
-## What's gitignored
+## Atom history is in git
 
-Everything in this folder except `README.md`, `_template.md`, and `.gitkeep` is gitignored. Your atoms are personal content; the framework is what gets shared.
+Atoms are mutable. When knowledge evolves, you edit the atom in place and bump the `version:` integer in frontmatter. Git keeps the previous text — `git log` and `git show` are the audit trail. There is no `_archive/` folder and no `superseded_by` field; that role is now git's.
+
+The `scripts/hooks/pre-commit` hook (install with `scripts/install-hooks.sh`) refuses any commit where an atom's body changed beyond whitespace without `version:` being bumped. New atoms must declare `version: 1`.
+
+## What's gitignored in the framework template
+
+In this public framework repo, everything in `atoms/` except `README.md`, `_template.md`, and `.gitkeep` is gitignored — so contributors don't push their personal content here. **In your own fork, remove that gitignore block** so git can record your atom history. The model assumes atoms are tracked.

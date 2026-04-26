@@ -1,61 +1,39 @@
 #!/bin/bash
-# Auto-generate wiki/index.md from wiki/ filenames + first-line titles.
+# Auto-generate index.md from wiki/<branch>/<page>.md filenames + first-line titles.
 # No LLM needed — pure filesystem scan.
 #
-# Branches are auto-discovered by filename prefix (the part before the first hyphen).
-# If you want a fixed branch order or display names, edit the BRANCHES override below.
+# Branches are auto-discovered from the subfolders of wiki/. To control order or
+# display names (e.g. "MCP" instead of "Mcp"), edit the BRANCHES override below.
 
 WIKI_DIR="$(cd "$(dirname "$0")/../wiki" && pwd)"
 INDEX="$WIKI_DIR/../index.md"
 
 # ─── Branch order and display names ───
-# Edit this array for your branches. Leave empty (declare -a BRANCHES=())
-# to auto-discover by filename prefix and capitalize display names automatically.
-#
-# Reference implementation uses these 11 branches in this order:
-declare -a BRANCHES=(
-  "harness-engineering|Harness Engineering"
-  "mcp|MCP"
-  "ai-skills|AI Skills"
-  "vibe-coding|Vibe Coding"
-  "ai-agent|AI Agent"
-  "self-media|Self-Media"
-  "product-business|Product & Business"
-  "claude-code|Claude Code"
-  "context-engineering|Context Engineering"
-  "career-mindset|Career & Mindset"
-  "developer-workflow|Developer Workflow"
-)
+# Format: "branch-folder|Display Name". Leave empty for auto-discovery.
+declare -a BRANCHES=()
 
 # ─── Auto-discover branches if not overridden ───
 if [ ${#BRANCHES[@]} -eq 0 ]; then
-  # Extract branch prefixes from filenames (everything before first hyphen)
-  declare -A SEEN
-  for f in "$WIKI_DIR"/*.md; do
-    [ -f "$f" ] || continue
-    slug=$(basename "$f" .md)
-    [[ "$slug" == "index" || "$slug" == "log" || "$slug" == "_template" || "$slug" == "README" ]] && continue
-    # Branch = filename up to first hyphen
-    branch="${slug%%-*}"
-    if [[ -z "${SEEN[$branch]}" ]]; then
-      SEEN[$branch]=1
-      # Display name = branch with hyphens->spaces and capitalized
-      display=$(echo "$branch" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1')
-      BRANCHES+=("$branch|$display")
-    fi
+  for d in "$WIKI_DIR"/*/; do
+    [ -d "$d" ] || continue
+    branch=$(basename "$d")
+    display=$(echo "$branch" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1')
+    BRANCHES+=("$branch|$display")
   done
-  # Sort branches alphabetically
   IFS=$'\n' BRANCHES=($(sort <<<"${BRANCHES[*]}"))
   unset IFS
 fi
 
 # ─── Count pages ───
 PAGE_COUNT=0
-for f in "$WIKI_DIR"/*.md; do
-  [ -f "$f" ] || continue
-  slug=$(basename "$f" .md)
-  [[ "$slug" == "index" || "$slug" == "log" || "$slug" == "_template" || "$slug" == "README" ]] && continue
-  ((PAGE_COUNT++))
+for entry in "${BRANCHES[@]}"; do
+  PREFIX="${entry%%|*}"
+  for f in "$WIKI_DIR/$PREFIX"/*.md; do
+    [ -f "$f" ] || continue
+    base=$(basename "$f" .md)
+    [[ "$base" == "_template" || "$base" == "README" ]] && continue
+    ((PAGE_COUNT++))
+  done
 done
 
 # ─── Write header ───
@@ -72,10 +50,11 @@ for entry in "${BRANCHES[@]}"; do
   PREFIX="${entry%%|*}"
   DISPLAY="${entry##*|}"
 
-  # Find matching files
   FILES=()
-  for f in "$WIKI_DIR"/${PREFIX}-*.md; do
+  for f in "$WIKI_DIR/$PREFIX"/*.md; do
     [ -f "$f" ] || continue
+    base=$(basename "$f" .md)
+    [[ "$base" == "_template" || "$base" == "README" ]] && continue
     FILES+=("$f")
   done
 
@@ -87,7 +66,8 @@ for entry in "${BRANCHES[@]}"; do
   echo "|------|-------|" >> "$INDEX"
 
   for f in $(printf '%s\n' "${FILES[@]}" | sort); do
-    slug=$(basename "$f" .md)
+    base=$(basename "$f" .md)
+    slug="$PREFIX/$base"
     title=$(head -1 "$f" | sed 's/^# //')
     echo "| [[$slug]] | $title |" >> "$INDEX"
   done

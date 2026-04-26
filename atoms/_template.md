@@ -7,6 +7,7 @@ source_ids: ["<stable-id-or-url>"]
 reuse_score: medium
 tags: []
 created: YYYY-MM-DD
+version: 1
 ---
 
 One-line summary of this atom's core claim.

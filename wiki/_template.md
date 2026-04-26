@@ -8,7 +8,7 @@ Opening paragraph. Why this matters, common misconception, what the reader will 
 
 Integrated content from multiple atoms, written as coherent prose. Not a bulleted dump of atoms — synthesize.
 
-When you first mention a related concept that has its own page, link it: [[other-page-slug]]. Don't repeat the link on subsequent mentions in the same page.
+When you first mention a related concept that has its own page, link it: [[other-branch/other-page-slug]]. Don't repeat the link on subsequent mentions in the same page.
 
 ## Second section heading
 
@@ -23,8 +23,8 @@ As needed. Aim for 1500–2500 words total per page. If you cross 2500, consider
 ---
 
 **See also**
-- [[related-page-one]] — one-line description of why this is relevant
-- [[related-page-two]] — one-line description
+- [[other-branch/related-page-one]] — one-line description of why this is relevant
+- [[same-branch/related-page-two]] — one-line description
 
 ---
 *Compiled from atoms: `branch/atom-slug-1`, `branch/atom-slug-2`, `branch/atom-slug-3`*

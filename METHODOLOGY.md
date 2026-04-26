@@ -64,7 +64,8 @@ Each phase can run independently. You can stop at atoms, or skip atoms and go st
 ### Operation
 1. List the topics your knowledge covers (doesn't need to be perfect — iterate)
 2. Create one folder per topic ("branch") under `atoms/` (e.g. `atoms/ai-agent/`, `atoms/mcp/`)
-3. Write a short note describing each branch's definition and boundary (in `STORY.md` or your own notes)
+3. Create the matching `wiki/<branch>/` folder so wiki pages have a home from day one
+4. Write a short note describing each branch's definition and boundary (in your own notes or a CONTRIBUTING / DESIGN doc)
 
 ### Branch design principles
 
@@ -120,7 +121,7 @@ Per segment, mark:
 
 A `.md` file with YAML frontmatter (metadata) and a body containing one core claim. Academic framing: Atomic Fact Decomposition — decomposing composite information into the smallest independently verifiable units.
 
-**Atoms are immutable.** Once created, don't edit. If knowledge evolves (view changes, technology updates), create a new atom replacing the old one, and move the old one to `_archive/`. Then recompile affected wiki pages. This mirrors Karpathy's "raw/ is read-only" principle — atoms are our raw layer; wiki is always rebuildable from atoms.
+**Atoms are mutable but versioned.** When knowledge evolves (view changes, technology updates), edit the atom in place and bump the integer in `version:`. Git keeps the prior text — `git log -p atoms/<branch>/<file>.md` retrieves any earlier version. The pre-commit hook (`scripts/hooks/pre-commit`) refuses commits where an atom's body changed beyond whitespace without a version bump. There is no `_archive/` folder; that role is git's.
 
 ```yaml
 ---
@@ -132,6 +133,7 @@ source_ids: []
 reuse_score: high | medium | low
 tags: []
 created: YYYY-MM-DD
+version: 1
 ---
 ```
 
@@ -238,10 +240,10 @@ Calibrate, then let subsequent batches run unattended. Skipping calibration and 
 
 ### Checklist
 
-- [ ] **Dedupe**: the same claim extracted from multiple sources → keep the most complete, archive the rest
-- [ ] **Reclassify**: atom in wrong branch → move, update frontmatter `id`
+- [ ] **Dedupe**: the same claim extracted from multiple sources → keep the most complete, edit it to absorb the others (bump `version`), delete the duplicates
+- [ ] **Reclassify**: atom in wrong branch → move, update frontmatter `id` (bump `version` since `id` is part of the body for these purposes)
 - [ ] **Handle bloated branches**: single branch over 30 atoms and naturally splittable → split
-- [ ] **Depth/reuse_score calibration**: batch-extracted atoms often inconsistent on these → normalize
+- [ ] **Depth/reuse_score calibration**: batch-extracted atoms often inconsistent on these → normalize (frontmatter-only fixes don't count as substantive but bump `version` anyway when in doubt)
 - [ ] **Gap analysis**: subtopic distribution and depth distribution within each branch
 
 ### Three-layer gap analysis
@@ -293,14 +295,14 @@ This is the payoff phase. Atoms are parts; wiki pages are products.
 
 Not one-atom-per-page. Group by "what a reader wants to understand", combining related atoms into one coherent article.
 
-Example: you have 5 atoms — "What is Harness", "Why Harness matters", "Three challenges of AI collaboration", "Harness vs Agent", "Harness public announcement" — compile into one page: "What is Harness Engineering".
+Example: you have 5 atoms — "What is Harness", "Why Harness matters", "Three challenges of AI collaboration", "Harness vs Agent", "Harness public announcement" — compile into one page: "What is Harness Engineering" at `wiki/harness-engineering/what-is-harness.md`.
 
 ### Format conventions (preconditions for automation)
 
 These conventions make `lint.sh` and `gen-index.sh` work:
 
-1. **Filename rule** — `<branch>-<topic-slug>.md`, all lowercase, hyphens only. Example: `harness-engineering-what-is-harness.md`.
-2. **`[[wiki-link]]` = filename without `.md`** — `[[harness-engineering-what-is-harness]]` maps to `wiki/harness-engineering-what-is-harness.md`. Scripts use this to find ghost links and orphans.
+1. **Filename rule** — `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only. The folder carries the branch name; the slug must not repeat it. Example: `wiki/harness-engineering/what-is-harness.md`, **not** `wiki/harness-engineering/harness-engineering-what-is-harness.md`.
+2. **`[[branch/slug]]` = relative path under `wiki/` without `.md`** — `[[harness-engineering/what-is-harness]]` maps to `wiki/harness-engineering/what-is-harness.md`. Scripts use this to find ghost links and orphans.
 3. **First line must be `# title`** — `gen-index.sh` reads this for page titles.
 4. **`[[link]]` can appear anywhere in-body** — not restricted to a "see also" section. First mention of a related concept links; subsequent mentions in the same page don't.
 5. **Temporal markers in uniform format** — version as `v3.5`, date as `2025-04`, avoid "current" / "latest" / "now" in time-sensitive contexts, use specific dates (`as of 2025-04`). `lint.sh` regex-checks these.
@@ -309,7 +311,7 @@ These conventions make `lint.sh` and `gen-index.sh` work:
 
 1. **Group by topic, not one-to-one with atoms** — typical wiki page = 3–8 atoms
 2. **Preserve voice** — wiki is opinionated knowledge, not encyclopedia
-3. **Add cross-references** — use `[[wiki-link]]` to build a network
+3. **Add cross-references** — use `[[branch/slug]]` to build a network
 4. **Tag sources** — footer lists source atoms for traceability
 5. **Length control** — 1500–2500 words per page. Split if longer.
 
@@ -329,20 +331,20 @@ Opening paragraph (why this matters, common misconception)
 ---
 
 **See also**
-- [[related-page-one]] — one-line description
-- [[related-page-two]] — one-line description
+- [[other-branch/related-page-one]] — one-line description
+- [[same-branch/related-page-two]] — one-line description
 
 ---
-*Compiled from N atoms: atom-a, atom-b, atom-c*
+*Compiled from N atoms: branch/atom-a, branch/atom-b, branch/atom-c*
 ```
 
 ### Global index
 
-Build `index.md` at the repo root (auto-generated by `scripts/gen-index.sh`). Lists all wiki pages, organized by branch, one-line summary each. This is the LLM's entry point for Query — it doesn't read every page, it scans the index to decide which pages to load.
+Build `index.md` at the repo root (auto-generated by `scripts/gen-index.sh`). Lists all wiki pages, organized by branch (one section per `wiki/<branch>/` subfolder), one-line summary each. This is the LLM's entry point for Query — it doesn't read every page, it scans the index to decide which pages to load.
 
-### Change log
+### Change history
 
-`log.md`, append-only. Every Ingest or page update logs an entry. Use `scripts/log-append.sh`.
+Git is the change log. Every Ingest, edit, or compile lands as a commit. There is no separate `log.md`. Use clear commit messages — `git log` is what you read when you want to know what changed and why. The pre-commit hook enforces the atom version-bump rule so substantive edits are always reflected in the `version:` field.
 
 ### AI's role
 
@@ -360,15 +362,15 @@ Wiki isn't done after the first build. Karpathy defined three continuous operati
 ### Ingest (new material)
 
 1. New material into `raw/` (or wherever your sources live)
-2. AI reads new material, extracts atoms
+2. AI reads new material, extracts atoms (`version: 1` for new ones, bump existing ones if absorbing duplicates)
 3. Update affected wiki pages (or create new ones)
-4. Run `gen-index.sh` and `log-append.sh`
+4. Run `gen-index.sh`, then `git commit` — the pre-commit hook validates version bumps
 
 ### Query (knowledge use)
 
 1. Read `index.md` to locate relevant pages
 2. Read pages, synthesize answer
-3. If the answer produces a new worth-keeping synthesis, write it back as an atom
+3. If the answer produces a new worth-keeping synthesis, write it back as an atom (or edit + version-bump an existing one)
 
 ### Lint (periodic audit)
 
@@ -381,12 +383,12 @@ Two layers, run in order.
 1. **Scope**: LLM reads `index.md` + all wiki pages (not atoms — Lint checks wiki-layer quality)
 2. **Checks**:
    - **Contradictions** — page A says "X is best practice", page B says "X is deprecated" → flag both, list paths and conflicting segments
-   - **Orphan pages** — no other page `[[wiki-link]]`s to it → add links or merge
-   - **Ghost links** — `[[wiki-link]]` to non-existent page → create page or remove link
+   - **Orphan pages** — no other page `[[branch/slug]]`s to it → add links or merge
+   - **Ghost links** — `[[branch/slug]]` to non-existent page → create page or remove link
    - **Concept gaps** — multiple pages reference a concept with no dedicated page → flag as candidate new page
    - **Expired claims** — version numbers, dates, temporal markers in time-sensitive contexts → verify
 3. **Output**: append to `lint-report.md`, sorted by severity (contradictions > ghost links > orphans > concept gaps > expired)
-4. **Action**: decide which to fix, do the edits, run `log-append.sh`
+4. **Action**: decide which to fix, do the edits, commit (the hook enforces version bumps on any atom-layer fixes)
 
 ---
 
@@ -432,6 +434,7 @@ Wiki answers "what is X"; graph answers "what is X connected to, and what might 
 
 - An AI coding agent (Claude Code, Cursor, equivalent)
 - A filesystem (atoms and wiki are just `.md` files)
+- Git (for version history; the pre-commit hook needs it)
 - That's it
 
 ### Advanced
@@ -453,7 +456,7 @@ Depends on how you define "worth". If you have 10 notes, just put them in a fold
 
 ### "Must I use YAML frontmatter?"
 
-No. YAML is for batch-processing and statistical analysis by AI. Small knowledge bases don't need it. But at minimum, mark `type` and `tags` — future-you will thank past-you.
+No. YAML is for batch-processing and statistical analysis by AI. Small knowledge bases don't need it. But at minimum, mark `type` and `tags` — future-you will thank past-you. Without `version:` you also lose the pre-commit hook's safety net.
 
 ### "Is AI-extracted quality good enough?"
 
@@ -470,7 +473,7 @@ Lint periodically. Technical knowledge: quarterly Lint. Check:
 - Technical trends still valid
 - Your own views still hold
 
-View evolution is not a bug. Mark old views as "evolved", preserve context, don't delete. Knowing how you changed is also knowledge.
+View evolution is not a bug. Edit the atom, bump `version:`, commit. The previous version stays in `git log` so you can see how you changed your mind. Knowing how you changed is also knowledge.
 
 ---
 
