@@ -24,9 +24,9 @@ By default, branches are auto-discovered from the subfolders of `wiki/` and disp
 
 ```bash
 declare -a BRANCHES=(
-  "harness-engineering|Harness Engineering"
   "mcp|MCP"
-  "ai-skills|AI Skills"
+  "llm-ops|LLM Ops"
+  "knowledge-base|Knowledge Base"
 )
 ```
 
@@ -98,9 +98,18 @@ The pre-commit hook calls `check-version-bump.sh` so a forgotten version bump is
 
 This copies `scripts/hooks/pre-commit` into `.git/hooks/pre-commit` and makes it executable. From then on, every `git commit` runs the check.
 
+The `SessionStart` hook in `.claude/settings.json` runs this automatically when Claude Code opens the repo, so you usually don't need to invoke it by hand.
+
 ---
 
 ## Run order after any change
+
+If you're driving the repo with Claude Code, two hooks in `.claude/settings.json` handle this:
+
+- `PostToolUse` on Write/Edit of `wiki/**/*.md` → `gen-index.sh`
+- `Stop` at end of turn → `lint.sh`
+
+If you're driving it manually:
 
 ```bash
 ./scripts/gen-index.sh    # rebuild index

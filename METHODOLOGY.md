@@ -1,20 +1,18 @@
-# From Scattered Materials to Usable Knowledge: An AI-Assisted Knowledge Compilation Methodology
+# Methodology: Scattered Materials → Usable Knowledge
 
 You have a pile of scattered content — posts, replies, lecture transcripts, notes, screenshots, audio — and you know there's value in it, but every time you need something you can't find it, and when you do find it you have to re-read to remember what it said.
 
 This document records a battle-tested pipeline: **use AI to refine raw material of any format into structured knowledge atoms, then compile those atoms into readable, cross-referenced wiki pages.**
 
-Not RAG. Not re-searching raw sources on every query. A one-time token investment to organize knowledge so that future queries just read the wiki.
+Not RAG. Not re-searching raw sources on every query. A one-time token investment to organize knowledge so future queries just read the wiki.
 
 ---
 
-## The core claim: Compile > RAG (at the personal knowledge base scale)
+## The core claim: Compile > RAG (at personal-KB scale)
 
-Andrej Karpathy's LLM Wiki pattern (2026) argues that "compile" beats "retrieval-augmented generation":
+**The RAG problem**: every query has to re-search the raw material, re-understand it, re-assemble it. Tokens spent on repeated understanding, and results vary run to run.
 
-**The RAG problem**: every query has to re-search the raw material, re-understand it, re-assemble it. Tokens spent on repeated understanding, and results can vary run to run.
-
-**The compile approach**: spend tokens once to understand the raw material thoroughly, producing structured wiki pages. Subsequent queries just read the wiki, never touching the raw source. Knowledge becomes a "persistent, compounded artifact" rather than something regenerated each time.
+**The compile approach**: spend tokens once to understand the raw material thoroughly, producing structured wiki pages. Subsequent queries just read the wiki, never touching the raw source. Knowledge becomes a persistent, compounded artifact rather than something regenerated each time.
 
 ### Conditions for this claim to hold
 
@@ -25,10 +23,22 @@ Andrej Karpathy's LLM Wiki pattern (2026) argues that "compile" beats "retrieval
 
 ### Honest limitations
 
-- No peer-reviewed benchmark comparing Compile vs RAG. Karpathy's evidence is "it feels good to use."
+- No peer-reviewed benchmark comparing compile vs RAG. The evidence is "it feels good to use".
 - Past a few hundred pages, pure wiki structure hits navigation bottlenecks. Pair with vector search for locating.
-- Compile cost is non-trivial — first Ingest of a large corpus burns significant tokens. But marginal cost decreases after that.
+- Compile cost is non-trivial — first Ingest of a large corpus burns significant tokens. Marginal cost decreases after that.
 - Knowledge goes stale. Lint is periodic, not one-shot.
+
+---
+
+## Why this fork diverges from upstream
+
+Three deliberate simplifications, all leaning on git or the filesystem instead of duplicating that info inside files:
+
+- **No date prefix in filenames.** Git tracks creation date better than a frozen prefix that drifts on rename (`git log --diff-filter=A --follow -- <file>`).
+- **No `created:` / `updated:` frontmatter.** Obsidian Dataview can query `file.ctime` / `file.mtime` directly; git is authoritative for history. Frontmatter dates always drift.
+- **Operations live in `.claude/skills/`.** `/ingest`, `/compile`, `/lint`, `/query` are skills; `gen-index.sh` and `lint.sh` run automatically via `.claude/settings.json` hooks. The shell scripts remain the canonical implementation — skills/hooks are thin orchestration.
+
+The `version:` integer and its pre-commit hook stay. The hook compares the staged file against `HEAD` ignoring whitespace and flips you off if the body changed without `version:` being bumped — this catches intent, not just diff. Git can't tell "I revised this view" from "I fixed a typo" on its own.
 
 ---
 
@@ -37,7 +47,7 @@ Andrej Karpathy's LLM Wiki pattern (2026) argues that "compile" beats "retrieval
 ```
 Raw material (text in any format)
     ↓ Phase 1: design the classification structure
-    ↓ Phase 2: segment classification (extract / skip)
+    ↓ Phase 2: segment classification (extract / skip / deferred)
     ↓ Phase 3: extract into knowledge atoms (one claim per atom)
 Structured knowledge atoms
     ↓ Phase 4: quality pass (dedupe, reclassify, gap analysis)
@@ -57,32 +67,25 @@ Each phase can run independently. You can stop at atoms, or skip atoms and go st
 
 **Goal**: decide the topic tree — how your knowledge should be classified.
 
-### Input
-- Your intuitive sense of your own knowledge landscape
-- (Optional) your teaching products, content roadmap, or professional domain
-
 ### Operation
-1. List the topics your knowledge covers (doesn't need to be perfect — iterate)
-2. Create one folder per topic ("branch") under `atoms/` (e.g. `atoms/ai-agent/`, `atoms/mcp/`)
-3. Create the matching `wiki/<branch>/` folder so wiki pages have a home from day one
-4. Write a short note describing each branch's definition and boundary (in your own notes or a CONTRIBUTING / DESIGN doc)
+
+1. List the topics your knowledge covers (doesn't need to be perfect — iterate).
+2. Create one folder per topic ("branch") under `atoms/`.
+3. Mirror with `wiki/<branch>/` so wiki pages have a home from day one.
+4. Write a short note describing each branch's definition and boundary.
 
 ### Branch design principles
 
 A good branch satisfies:
-- **Independence** — can't fit cleanly into any existing branch
-- **Scale** — expected to hold 5+ knowledge points
-- **Clear boundaries** — you can articulate "what belongs, what doesn't"
-- **Teaching independence** — can anchor at least 30 minutes of instruction on its own
+- **Independence** — can't fit cleanly into any existing branch.
+- **Scale** — expected to hold 5+ knowledge points.
+- **Clear boundaries** — you can articulate "what belongs, what doesn't".
+- **Teaching independence** — could anchor at least 30 minutes of instruction on its own.
 
 Common mistakes:
-- Branches too fine (each holds only 2–3 atoms) → use tags instead
-- Branches too coarse (50+ atoms spanning three unrelated topics) → split
-- Boundaries blurry (>50% of atoms also tagged with another branch) → merge or redefine
-
-### AI's role
-
-Let AI review your material list and propose a branch structure. But the final call is yours — AI doesn't know your teaching positioning or differentiation.
+- Branches too fine (each holds only 2–3 atoms) → use tags instead.
+- Branches too coarse (50+ atoms spanning three unrelated topics) → split.
+- Boundaries blurry (>50% of atoms also tagged with another branch) → merge or redefine.
 
 ---
 
@@ -90,26 +93,15 @@ Let AI review your material list and propose a branch structure. But the final c
 
 **Goal**: scan raw material and mark each segment "extract" / "skip" / "deferred".
 
-This is the quality gatekeeper. Skipping classification and extracting everything produces a flood of low-quality atoms, and cleanup costs more than prevention. Real data: social media replies filter at ~87% — most replies are noise (emojis, greetings, "+1"). Classify first, only extract the segments worth extracting.
+This is the quality gatekeeper. Skipping classification and extracting everything produces a flood of low-quality atoms, and cleanup costs more than prevention. Classify first, only extract what's worth extracting.
 
 ### Classification criteria
-
-Per segment, mark:
 
 - **Extract** — contains a knowledge point, view, experience, or method that stands alone. Even out of original context, this segment has teaching or reference value.
 - **Skip** — pure social interaction, restating others' views, filler agreement, action items ("tomorrow do X"), pure emotion.
 - **Deferred** — potentially valuable but uncertain, or requires surrounding context to understand. Skip in the first pass; revisit after the full batch is classified.
 
-### Extraction rate expectations by source type
-
-| Source | Expected extract rate | Classification focus |
-|--------|----------------------|---------------------|
-| Social posts | 70–90% | Author-curated, most worth extracting |
-| Social replies | 10–15% | Mostly noise, only deep-explanation replies |
-| Transcripts | 40–60% | Skip greetings, repetition, tangents |
-| Articles / papers | 80–95% | Mostly valuable; main filter is topic relevance |
-| Notes / memos | 20–40% | Heavy in action items and fragments |
-| Conversation logs | 15–30% | Extract conclusions and decisions only |
+Extraction rate varies wildly by source: published articles often filter 80–95%, social replies often filter 10–15% (most are noise). Calibrate against your own first batch — don't trust a generic table.
 
 ---
 
@@ -119,9 +111,9 @@ Per segment, mark:
 
 ### What is a knowledge atom
 
-A `.md` file with YAML frontmatter (metadata) and a body containing one core claim. Academic framing: Atomic Fact Decomposition — decomposing composite information into the smallest independently verifiable units.
+A `.md` file with YAML frontmatter and a body containing one core claim. Academic framing: Atomic Fact Decomposition — decomposing composite information into the smallest independently verifiable units.
 
-**Atoms are mutable but versioned.** When knowledge evolves (view changes, technology updates), edit the atom in place and bump the integer in `version:`. Git keeps the prior text — `git log -p atoms/<branch>/<file>.md` retrieves any earlier version. The pre-commit hook (`scripts/hooks/pre-commit`) refuses commits where an atom's body changed beyond whitespace without a version bump. There is no `_archive/` folder; that role is git's.
+**Atoms are mutable but versioned.** When knowledge evolves (view changes, technology updates), edit the atom in place and bump the integer in `version:`. Git keeps the prior text — `git log -p atoms/<branch>/<file>.md` retrieves any earlier version. The pre-commit hook refuses commits where the body changed beyond whitespace without a version bump. There is no `_archive/` folder; that role is git's.
 
 ```yaml
 ---
@@ -132,101 +124,83 @@ source_type: post | transcript | article | note | screenshot | audio
 source_ids: []
 reuse_score: high | medium | low
 tags: []
-created: YYYY-MM-DD
 version: 1
 ---
 ```
 
 ### Extraction principles
 
-1. **Extract, don't copy** — store refined knowledge, not original pasted
-2. **One atom, one claim** — a post with three independent views becomes three atoms
-3. **Preserve the author's voice** — personal knowledge differentiation comes from perspective; don't flatten into neutral encyclopedia prose
-4. **Tag sources** — every atom traces back to its raw source
-5. **One atom belongs to one branch** — use tags for related topics
+1. **Extract, don't copy** — store refined knowledge, not pasted original.
+2. **One atom, one claim** — a post with three independent views becomes three atoms.
+3. **Preserve the author's voice** — personal knowledge differentiation comes from perspective; don't flatten into neutral encyclopedia prose.
+4. **Tag sources** — every atom traces back to its raw source via `source_ids`.
+5. **One atom belongs to one branch** — use tags for related topics.
 
 ### Judging "extract" vs "copy"
 
-The same raw text, handled two ways:
+Same raw text, handled two ways:
 
-**Raw** (social post):
-> Yesterday I spent three hours debugging an agent and realized the system prompt was too long — the model was ignoring the second half. Splitting the prompt into three layers — role definition, task rules, current context — fixed it instantly. Don't cram everything into one prompt.
+**Raw** (note):
+> Spent three hours debugging an agent and realized the system prompt was too long — the model was ignoring the second half. Splitting the prompt into three layers — role, task rules, current context — fixed it.
 
 **Bad atom (copying)**:
 ```markdown
 # Debug agent experience
-Yesterday I spent three hours debugging an agent and realized the system
-prompt was too long — the model was ignoring the second half. Splitting
-the prompt into three layers — role definition, task rules, current
-context — fixed it instantly. Don't cram everything into one prompt.
+Spent three hours debugging an agent and realized the system prompt was
+too long — the model was ignoring the second half. Splitting into three
+layers fixed it.
 ```
 → This just adds a title to the original. No refinement.
 
 **Good atom (extraction)**:
 ```markdown
-# System Prompt Layered Architecture
+# Layered system prompts
 
-Long system prompts cause models to ignore later instructions. The fix is
-to split the prompt into three layers:
+Long system prompts cause models to ignore later instructions. The fix:
+split the prompt into three layers.
 
-1. **Role definition** — who you are, core responsibilities
-2. **Task rules** — operational constraints, quality bar
-3. **Current context** — task-specific information
+1. **Role definition** — who you are, core responsibilities.
+2. **Task rules** — operational constraints, quality bar.
+3. **Current context** — task-specific information.
 
 The benefit isn't just avoiding omission — each layer can be updated
-independently. Role definition rarely changes; task rules adjust occasionally;
-context changes every time. Mixed together, any edit forces re-reviewing
-the whole prompt.
+independently. Role rarely changes; rules adjust occasionally; context
+changes every time. Mixed together, any edit forces re-reviewing the whole
+prompt.
 ```
-→ Extracted the core knowledge (layered architecture), added an implicit insight (independent update), structured it.
+→ Extracted the core knowledge, added an implicit insight (independent update), structured it.
 
 ### When to split one segment into multiple atoms
 
-**Test**: if a passage contains two views, and removing one leaves the other intact — split.
-
-**Split example**:
-
-Raw: "Vibe Coding isn't not writing code — it's moving effort from syntax to architecture. Also, after using AI to write code, code review becomes more important than before, because you're not reviewing your own logic anymore."
-
-→ Two atoms:
-1. **What Vibe Coding really is** — effort shifts from syntax to architecture (type: explanation)
-2. **Code Review in the AI era** — reviewing AI's logic, not your own (type: opinion)
-
-**Don't split example**:
-
-Raw: "The three-layer Harness architecture is Persona, Rules, Context. Persona defines the role, Rules define constraints, Context provides current info."
-
-→ Don't split. The three layers are one concept — each is incomplete alone.
+**Test**: if a passage contains two views, and removing one leaves the other intact — split. If the parts are incomplete alone (e.g. "the three layers are X, Y, Z"), don't split.
 
 ### What should not become an atom
 
-These should be caught at classification, but if they slip through, block them at extraction:
-
-- **Pure action items**: "Tomorrow update landing page" → todo, not knowledge
-- **Unannotated restatement**: "OpenAI released GPT-5" → news, unless paired with your analysis
-- **Over-time-sensitive content**: "Claude 3.5 Sonnet is currently strongest" → stale in three months, unless discussing evaluation methodology itself
-- **Pure emotion**: "Exhausting day but satisfying" → journal, not knowledge
+- **Pure action items**: "Tomorrow update landing page" → todo, not knowledge.
+- **Unannotated restatement**: "OpenAI released GPT-5" → news, unless paired with your analysis.
+- **Over-time-sensitive content**: "Model X is currently strongest" → stale in three months, unless discussing evaluation methodology itself.
+- **Pure emotion**: "Exhausting day but satisfying" → journal, not knowledge.
 
 ### Quality judgment
 
 How to set `reuse_score`:
-- **high** — standalone-usable in a lecture or article, with clear view + support
-- **medium** — valuable perspective but needs companion atoms for complete content
-- **low** — informational, niche use cases
+- **high** — standalone-usable in a lecture or article, with clear view + support.
+- **medium** — valuable perspective but needs companion atoms for complete content.
+- **low** — informational, niche use cases.
 
 ### Batching order
 
 If you have multiple source types, process in this order:
 
-1. **Published content first** — already self-filtered, baseline quality high
-2. **Deep materials next** — supplement published content with technical detail
-3. **Private notes last** — highest judgment cost, prone to low-quality atoms
+1. **Published content first** — already self-filtered, baseline quality high.
+2. **Deep materials next** — supplement with technical detail.
+3. **Private notes last** — highest judgment cost, prone to low-quality atoms.
 
-Build the skeleton first (from public content), add muscle (from depth materials), finish with details (notes). Starting with notes means drowning in details without structure.
+Build the skeleton first, add muscle, finish with details. Starting with notes means drowning in details without structure.
 
 ### First-batch calibration
 
-After the first batch (~10–20 segments), **human-review**. Check two things:
+After the first batch (~10–20 segments), **human-review**. Check:
 1. Did classification miss anything worth extracting?
 2. Is the extraction quality what you want — is voice preserved, is structure good enough?
 
@@ -240,23 +214,19 @@ Calibrate, then let subsequent batches run unattended. Skipping calibration and 
 
 ### Checklist
 
-- [ ] **Dedupe**: the same claim extracted from multiple sources → keep the most complete, edit it to absorb the others (bump `version`), delete the duplicates
-- [ ] **Reclassify**: atom in wrong branch → move, update frontmatter `id` (bump `version` since `id` is part of the body for these purposes)
-- [ ] **Handle bloated branches**: single branch over 30 atoms and naturally splittable → split
-- [ ] **Depth/reuse_score calibration**: batch-extracted atoms often inconsistent on these → normalize (frontmatter-only fixes don't count as substantive but bump `version` anyway when in doubt)
-- [ ] **Gap analysis**: subtopic distribution and depth distribution within each branch
+- [ ] **Dedupe**: the same claim extracted from multiple sources → keep the most complete, absorb the others (bump `version`), delete the duplicates.
+- [ ] **Reclassify**: atom in wrong branch → move, update frontmatter `id`, bump `version`.
+- [ ] **Handle bloated branches**: a branch over 30 atoms that naturally splits → split.
+- [ ] **Depth/reuse_score calibration**: batch-extracted atoms often inconsistent on these → normalize.
+- [ ] **Gap analysis**: subtopic distribution and depth distribution within each branch.
 
 ### Three-layer gap analysis
 
-1. **Topic completeness** — what subtopics does each branch cover, what's visibly missing
-2. **Depth gradient** — is beginner/intermediate/advanced distribution reasonable
-3. **Use-case alignment** — does the branch structure cover what your teaching products / content plans need
+1. **Topic completeness** — what subtopics does each branch cover, what's visibly missing.
+2. **Depth gradient** — is beginner/intermediate/advanced distribution reasonable.
+3. **Use-case alignment** — does the branch structure cover what you actually use the KB for.
 
-Not all gaps need filling. Some gaps are real — you genuinely have nothing to say on that subtopic. That's a knowledge boundary, not a task to fill.
-
-### AI's role
-
-Gap analysis is a great AI job — it's good at distribution stats, pattern-finding, cross-comparison. But "is this gap important?" is your call.
+Not all gaps need filling. Some gaps are real — you genuinely have nothing to say on that subtopic. That's a knowledge boundary, not a task. Branch design also evolves; don't expect v1 to be perfect.
 
 ---
 
@@ -267,21 +237,21 @@ Gap analysis is a great AI job — it's good at distribution stats, pattern-find
 ### External verification
 
 Use WebSearch (or similar) to verify:
-- Are technical claims correct / current
-- Are numeric data points fresh
-- Are you missing important counterpoints
+- Are technical claims correct / current?
+- Are numeric data points fresh?
+- Are you missing important counterpoints?
 
 **Principle**: external verification is corroboration and supplement, not replacement. Other people's views are reference; yours is the knowledge base's core value.
 
 ### Branch summaries
 
 Each branch produces a `SUMMARY.md`:
-- **Core narrative line** — what this branch is "about"
-- **Atom list** — organized by subtopic × depth
-- **Teaching path suggestions** — which atoms fit which formats
-- **Known gaps** — what still needs filling
+- **Core narrative line** — what this branch is "about".
+- **Atom list** — organized by subtopic × depth.
+- **Use-case suggestions** — which atoms fit which output formats.
+- **Known gaps** — what still needs filling.
 
-This step needs a strong model. Cheap models handle extraction and formatting fine, but "distill a teaching narrative from 60 atoms" needs deeper comprehension.
+This step needs a strong model. Cheap models handle extraction and formatting fine, but "distill a narrative from 60 atoms" needs deeper comprehension.
 
 ---
 
@@ -293,26 +263,24 @@ This is the payoff phase. Atoms are parts; wiki pages are products.
 
 ### Compilation logic
 
-Not one-atom-per-page. Group by "what a reader wants to understand", combining related atoms into one coherent article.
-
-Example: you have 5 atoms — "What is Harness", "Why Harness matters", "Three challenges of AI collaboration", "Harness vs Agent", "Harness public announcement" — compile into one page: "What is Harness Engineering" at `wiki/harness-engineering/what-is-harness.md`.
+Not one-atom-per-page. Group by "what a reader wants to understand", combining related atoms into one coherent article. Typical wiki page = 3–8 atoms.
 
 ### Format conventions (preconditions for automation)
 
 These conventions make `lint.sh` and `gen-index.sh` work:
 
-1. **Filename rule** — `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only. The folder carries the branch name; the slug must not repeat it. Example: `wiki/harness-engineering/what-is-harness.md`, **not** `wiki/harness-engineering/harness-engineering-what-is-harness.md`.
-2. **`[[branch/slug]]` = relative path under `wiki/` without `.md`** — `[[harness-engineering/what-is-harness]]` maps to `wiki/harness-engineering/what-is-harness.md`. Scripts use this to find ghost links and orphans.
+1. **Filename rule** — `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only. The folder carries the branch name; the slug must not repeat it.
+2. **`[[branch/slug]]` = relative path under `wiki/` without `.md`.** Scripts use this to find ghost links and orphans.
 3. **First line must be `# title`** — `gen-index.sh` reads this for page titles.
-4. **`[[link]]` can appear anywhere in-body** — not restricted to a "see also" section. First mention of a related concept links; subsequent mentions in the same page don't.
-5. **Temporal markers in uniform format** — version as `v3.5`, date as `2025-04`, avoid "current" / "latest" / "now" in time-sensitive contexts, use specific dates (`as of 2025-04`). `lint.sh` regex-checks these.
+4. **`[[link]]` can appear anywhere in-body** — not restricted to a "see also" section. First mention links; subsequent mentions in the same page don't.
+5. **Temporal markers in uniform format** — version as `v3.5`, date as `2026-04`. Avoid "current" / "latest" / "now" in time-sensitive contexts. `lint.sh` regex-checks these.
 
 ### Compilation principles
 
-1. **Group by topic, not one-to-one with atoms** — typical wiki page = 3–8 atoms
-2. **Preserve voice** — wiki is opinionated knowledge, not encyclopedia
-3. **Add cross-references** — use `[[branch/slug]]` to build a network
-4. **Tag sources** — footer lists source atoms for traceability
+1. **Group by topic, not one-to-one with atoms.**
+2. **Preserve voice** — wiki is opinionated knowledge, not encyclopedia.
+3. **Add cross-references** — use `[[branch/slug]]` to build a network.
+4. **Tag sources** — footer lists source atoms for traceability.
 5. **Length control** — 1500–2500 words per page. Split if longer.
 
 ### Wiki page structure
@@ -320,10 +288,10 @@ These conventions make `lint.sh` and `gen-index.sh` work:
 ```markdown
 # Page Title
 
-Opening paragraph (why this matters, common misconception)
+Opening paragraph (why this matters, common misconception).
 
 ## Section one
-[Integrated content from multiple atoms, teaching tone, coherent prose]
+[Integrated content from multiple atoms, coherent prose]
 
 ## Section two
 [Continuation, natural transition]
@@ -340,111 +308,35 @@ Opening paragraph (why this matters, common misconception)
 
 ### Global index
 
-Build `index.md` at the repo root (auto-generated by `scripts/gen-index.sh`). Lists all wiki pages, organized by branch (one section per `wiki/<branch>/` subfolder), one-line summary each. This is the LLM's entry point for Query — it doesn't read every page, it scans the index to decide which pages to load.
+`index.md` at the repo root is auto-generated by `scripts/gen-index.sh` (and re-run automatically by the `PostToolUse` hook in `.claude/settings.json` after any wiki edit). Lists all wiki pages, grouped by branch, one-line each. This is the LLM's entry point for Query — it scans the index to decide which pages to load, not the whole wiki.
 
 ### Change history
 
 Git is the change log. Every Ingest, edit, or compile lands as a commit. There is no separate `log.md`. Use clear commit messages — `git log` is what you read when you want to know what changed and why. The pre-commit hook enforces the atom version-bump rule so substantive edits are always reflected in the `version:` field.
 
-### AI's role
-
-Compilation is where AI shines. It's good at "synthesize 5 scattered pieces into one structured article". What to give it:
-- Clear voice instructions (teaching style vs reference doc style)
-- Example pages (show what a good wiki page looks like)
-- The branch `SUMMARY.md` (so it understands the narrative line)
-
 ---
 
-## Continuous maintenance: three core operations
+## Continuous maintenance: the four operations
 
-Wiki isn't done after the first build. Karpathy defined three continuous operations:
+Wiki isn't done after the first build. Four continuous operations, each implemented as a `.claude/skills/` skill:
 
-### Ingest (new material)
+| Skill | Trigger | What it does |
+|---|---|---|
+| `/ingest` | new material in `raw/` | Read it, classify segments, extract atoms into the matching branch. |
+| `/compile` | new or changed atoms | Group atoms into a wiki page (or update one). Parallel-compile uses a slug-lock to avoid filename collisions. |
+| `/lint` | periodic, or after large changes | Programmatic check (`lint.sh`) for ghost links, orphans, format violations; LLM check for contradictions, concept gaps, expired claims, weak orphans. Appends findings to `lint-report.md`. |
+| `/query` | answering a question | Read `index.md`, load relevant pages only, answer. Optionally write back the synthesis as a new atom or version bump. |
 
-1. New material into `raw/` (or wherever your sources live)
-2. AI reads new material, extracts atoms (`version: 1` for new ones, bump existing ones if absorbing duplicates)
-3. Update affected wiki pages (or create new ones)
-4. Run `gen-index.sh`, then `git commit` — the pre-commit hook validates version bumps
-
-### Query (knowledge use)
-
-1. Read `index.md` to locate relevant pages
-2. Read pages, synthesize answer
-3. If the answer produces a new worth-keeping synthesis, write it back as an atom (or edit + version-bump an existing one)
-
-### Lint (periodic audit)
-
-Two layers, run in order.
-
-**Programmatic Lint** (`scripts/lint.sh`): checks ghost links, orphan pages, format violations, outdated markers. Seconds to run. Deterministic. Output: `lint-report.md`.
-
-**LLM Lint**: the AI audits wiki health.
-
-1. **Scope**: LLM reads `index.md` + all wiki pages (not atoms — Lint checks wiki-layer quality)
-2. **Checks**:
-   - **Contradictions** — page A says "X is best practice", page B says "X is deprecated" → flag both, list paths and conflicting segments
-   - **Orphan pages** — no other page `[[branch/slug]]`s to it → add links or merge
-   - **Ghost links** — `[[branch/slug]]` to non-existent page → create page or remove link
-   - **Concept gaps** — multiple pages reference a concept with no dedicated page → flag as candidate new page
-   - **Expired claims** — version numbers, dates, temporal markers in time-sensitive contexts → verify
-3. **Output**: append to `lint-report.md`, sorted by severity (contradictions > ghost links > orphans > concept gaps > expired)
-4. **Action**: decide which to fix, do the edits, commit (the hook enforces version bumps on any atom-layer fixes)
-
----
-
-## Advanced: graphify and knowledge graphs
-
-If your needs exceed wiki's flat structure, [graphify](https://github.com/safishamsi/graphify) (25k+ stars) takes the graph approach.
-
-### What graphify does
-
-Solves the same problem Karpathy's wiki does — "pile of raw material, structure it" — but with knowledge graphs instead of wiki pages.
-
-Technical highlights:
-- **Three-stage pipeline**: AST parsing → transcription extraction → LLM semantic analysis. Claims 71.5× token savings over direct-to-LLM.
-- **Multimodal**: code, images, video, audio
-- **Topological clustering**: Leiden community detection, not embedding similarity — captures structural relationships, not surface semantic proximity
-- **Three-tier confidence**: EXTRACTED, INFERRED, AMBIGUOUS
-
-### When to use graphify vs wiki
-
-| Scenario | Wiki | graphify |
-|---------|------|----------|
-| Personal knowledge (<200 pages) | ideal | overkill |
-| Large codebase understanding | poor fit | strong fit |
-| Multimodal material (code + docs + video) | need format unification | native support |
-| Interactive visualization | not provided | built-in |
-| Human-readable pages | core value | not the point |
-| Cross-domain link discovery | manual `[[link]]` | automatic |
-
-### Hybrid
-
-Not mutually exclusive. A viable combination:
-1. Use this methodology's Phase 1–5 to build atoms and branch structure
-2. Use Phase 6 to compile human-readable wiki
-3. Feed the same atoms to graphify for a knowledge graph
-
-Wiki answers "what is X"; graph answers "what is X connected to, and what might it be connected to".
+Hooks in `.claude/settings.json` keep the housekeeping invisible: `gen-index.sh` runs after every wiki edit, `lint.sh` runs at the end of every turn, the git pre-commit hook is auto-installed on session start.
 
 ---
 
 ## Tooling
 
-### Minimum
-
-- An AI coding agent (Claude Code, Cursor, equivalent)
-- A filesystem (atoms and wiki are just `.md` files)
-- Git (for version history; the pre-commit hook needs it)
-- That's it
-
-### Advanced
-
-| Tool | Use | Necessity |
-|------|-----|-----------|
-| Obsidian | Browse wiki, graph view for connections | Recommended |
-| MCPVault | Let AI agents read/write Obsidian vault | Recommended with Obsidian |
-| Vector DB | Assist location (past 200 pages) | Large-scale only |
-| graphify | Knowledge graph visualization | Optional, for large-scale or multimodal |
+- **AI coding agent** — Claude Code (this repo is configured for it via `.claude/`). Other agents work too if you give them `CLAUDE.md`.
+- **Filesystem** — atoms and wiki are just `.md` files.
+- **Git** — for version history; the pre-commit hook needs it.
+- **Obsidian (optional)** — opens the repo as a vault. Dataview can query atoms via `file.ctime` / `file.mtime` and any frontmatter field; the graph view shows `[[ ]]` connections.
 
 ---
 
@@ -456,7 +348,7 @@ Depends on how you define "worth". If you have 10 notes, just put them in a fold
 
 ### "Must I use YAML frontmatter?"
 
-No. YAML is for batch-processing and statistical analysis by AI. Small knowledge bases don't need it. But at minimum, mark `type` and `tags` — future-you will thank past-you. Without `version:` you also lose the pre-commit hook's safety net.
+Yes for `version:` (the pre-commit hook needs it). The rest is for batch-processing and statistical analysis. At minimum, mark `type` and `tags` — future-you will thank past-you.
 
 ### "Is AI-extracted quality good enough?"
 
@@ -464,30 +356,13 @@ Depends on the rules and examples you give. AI extraction without rules = random
 
 ### "Compile vs RAG — exclusive choice?"
 
-No. Small-scale use Compile (wiki). Large-scale use hybrid. Compile for core stable high-value knowledge; RAG for one-off long-tail queries.
+No. Small-scale use compile (wiki). Large-scale use hybrid. Compile for core stable high-value knowledge; RAG for one-off long-tail queries.
 
 ### "What if knowledge goes stale?"
 
 Lint periodically. Technical knowledge: quarterly Lint. Check:
-- Tool version numbers still correct
-- Technical trends still valid
-- Your own views still hold
+- Tool version numbers still correct.
+- Technical trends still valid.
+- Your own views still hold.
 
 View evolution is not a bug. Edit the atom, bump `version:`, commit. The previous version stays in `git log` so you can see how you changed your mind. Knowing how you changed is also knowledge.
-
----
-
-## Reference implementation data
-
-See the `README.md` of this repo for data from the reference implementation (584 posts + 8,668 replies → 630 atoms → 83 wiki pages across 11 branches).
-
-### Lessons from the reference run
-
-- **Reply value is underrated.** Social replies often contain deeper technical detail than posts — because replies happen in concrete problem contexts. But filtering cost is high (87% noise).
-- **Model choice varies by phase.** Extraction (Phase 2–3) fits mid-tier models. Summary (Phase 5) and Compile (Phase 6) need stronger models — synthesizing a narrative from 60 atoms requires depth.
-- **Branch design evolves.** Don't expect v1 to be perfect. Splitting a branch during Phase 4 is normal.
-- **Not all gaps need filling.** Gap analysis will list "theoretically should exist but missing" knowledge points. Some are real gaps; some are just "you have nothing to say here". Don't fill the latter.
-
----
-
-*This methodology is distilled from a real-world implementation. See the main README for metrics and outcomes.*

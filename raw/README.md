@@ -9,7 +9,7 @@ Anything text-based that you want to extract knowledge from:
 - PDFs (after text extraction)
 - Markdown notes
 - Lecture / podcast transcripts
-- Social media post dumps (Threads, X, etc.)
+- Social media post dumps
 - Articles, papers
 - Screenshots (after OCR)
 - Audio (after transcription)
@@ -23,12 +23,12 @@ Format-wise: prefer plain text or markdown. Binary files (raw PDFs, audio) shoul
 ```
 raw/
 ├── threads/
-│   ├── 2026-01-posts.md
-│   └── 2026-01-replies.md
+│   ├── posts.md
+│   └── replies.md
 ├── lectures/
-│   └── 2026-03-15-skill-design.md
+│   └── skill-design.md
 ├── articles/
-│   └── 2026-02-mcp-deep-dive.md
+│   └── mcp-deep-dive.md
 └── notes/
     └── ...
 ```
@@ -43,6 +43,4 @@ Subfolders by source type help during Ingest — the LLM can target one source a
 
 ## Why this layer exists
 
-Karpathy's original LLM Wiki is `raw → wiki` — the LLM reads raw and emits wiki directly. This repo splits that into `raw → atoms → wiki`, with atoms as an intermediate immutable source-of-truth layer.
-
-But raw is still where everything starts. It's the layer the human owns; the LLM just reads from it.
+The pipeline is `raw → atoms → wiki`. Raw is where everything starts — the layer the human owns; the LLM just reads from it. Atoms are the intermediate source of truth; wiki is the derived cache.

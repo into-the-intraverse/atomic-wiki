@@ -6,7 +6,6 @@ source_type: post
 source_ids: ["<stable-id-or-url>"]
 reuse_score: medium
 tags: []
-created: YYYY-MM-DD
 version: 1
 ---
 

@@ -1,8 +1,6 @@
 # CLAUDE.md — Schema for LLMs operating this repo
 
-You are operating on a knowledge base built on the LLM Wiki pattern (Karpathy 2026), with four optimizations: an atom layer, topic-branch organization, two-layer Lint, and parallel-compile naming locks.
-
-This file is the formal spec — read it before touching anything. Mental model, operations, file formats, lifecycle rules, and what you must never do.
+Formal spec — read it before touching anything. Mental model, file formats, lifecycle rules, what you must never do. The reasoning behind each choice lives in [METHODOLOGY.md](METHODOLOGY.md).
 
 ---
 
@@ -15,15 +13,13 @@ raw/                  sources you may read but never write
 atoms/                knowledge atoms, organized by topic-branch
   <branch-1>/         one folder per topic
   <branch-2>/         each contains atoms (source of truth)
-  ...
 wiki/                 compiled pages, mirrors the atom branch tree
-  <branch-1>/         one folder per topic-branch
+  <branch-1>/
   <branch-2>/
-  ...
 index.md              auto-generated wiki navigation
 ```
 
-Atoms are mutable but versioned: edit the atom in place, bump the integer in `version:` when the body changed beyond formatting. Git is the audit trail — `git log atoms/<branch>/<file>.md` shows every prior version. The pre-commit hook (`scripts/hooks/pre-commit`, install with `scripts/install-hooks.sh`) refuses commits where an atom's body changed without a version bump.
+Atoms are mutable but versioned: edit the atom in place, bump the integer in `version:` when the body changed beyond formatting. Git is the audit trail — `git log atoms/<branch>/<file>.md` shows every prior version. The pre-commit hook (`scripts/hooks/pre-commit`) refuses commits where an atom's body changed without a version bump.
 
 Wiki is rebuildable from atoms. If a wiki page is wrong, fix the underlying atom and recompile, never patch the wiki.
 
@@ -42,7 +38,6 @@ source_type: post | reply | thread | transcript | article | note | screenshot | 
 source_ids: []
 reuse_score: high | medium | low
 tags: []
-created: YYYY-MM-DD
 version: 1
 ---
 ```
@@ -56,19 +51,19 @@ version: 1
 | `source_ids` | Stable identifiers (URLs, paths, post IDs). Atoms without source attribution are not auditable. |
 | `reuse_score` | `high` = standalone-publishable, `medium` = needs companions, `low` = niche. |
 | `tags` | Cross-cutting concerns. Used to surface related atoms across branches. |
-| `created` | ISO date. Used for chronological ordering and stale-detection. |
 | `version` | Integer, starts at `1`. Bump by 1 every time the body changes beyond pure whitespace. The pre-commit hook enforces this. |
 
-Optional fields you may add: `confidence` (high/medium/low), `updated: YYYY-MM-DD` (date of last bump).
+Optional fields you may add: `confidence` (high/medium/low).
+
+Dates are deliberately **not** in frontmatter. Git tracks creation (`git log --diff-filter=A --follow -- <file>`) and last-modified (`git log -1`). Obsidian Dataview can query `file.ctime` / `file.mtime` directly.
 
 ### Filename
 
-Pattern: `YYYY-MM-DD-<descriptive-slug>.md`
+Pattern: `<descriptive-slug>.md`
 
-- Date prefix gives natural chronological order in `ls`.
 - Slug all lowercase, hyphens only — no underscores, no spaces, no uppercase.
 - Slug should be 3–6 words describing the core claim.
-- The date in the filename is the `created` date and never changes, even after later edits.
+- No date prefix — git owns that.
 
 ### Body
 
@@ -150,7 +145,7 @@ Continue.
 
 In time-sensitive claims, use one of:
 - Specific date: `as of 2026-04`
-- Version number: `v3.5`, `Claude 3.5 Sonnet`
+- Version number: `v3.5`
 
 Avoid bare `currently` / `latest` / `now` in time-sensitive contexts. Lint regex flags only `<temporal word> <version/date>` combinations to avoid false-positive flooding from rhetorical use.
 
@@ -178,7 +173,7 @@ If only 1–2 atoms fit a candidate topic, use tags instead.
 ### When to split
 
 - **Bloat** — single branch exceeds 30 atoms and content naturally clusters.
-- **Teaching need** — preparing a course reveals the branch needs to split.
+- **Use-case need** — preparing an output (talk, article, course) reveals the branch needs to split.
 
 ### One atom, one branch
 
@@ -196,69 +191,29 @@ When adding/merging/splitting:
 
 ## Operations
 
-You execute four operations on demand:
+The four operations live as skills under `.claude/skills/`. Each skill spells out the constraints and the script it runs:
 
-### Ingest
+| Skill | Trigger | Purpose |
+|---|---|---|
+| `/ingest` | new material in `raw/` | classify segments, extract atoms into the matching branch |
+| `/compile` | new or changed atoms | group atoms into a wiki page (typical = 3–8 atoms per page) |
+| `/lint` | periodic or pre-commit | programmatic check + LLM semantic check |
+| `/query` | answering a question | read `index.md`, load relevant pages, answer |
 
-User adds new material to `raw/` (or any source location). You read it, classify each segment ("extract" / "skip" / "deferred"), then extract the "extract" segments into atoms under the matching `atoms/<branch>/` folder.
-
-Constraints:
-- One atom equals one claim.
-- Use the frontmatter format above. Do not invent fields.
-- Place atoms in the matching topic-branch. If no branch fits, list as deferred candidate; do not invent branches without user approval.
-- Preserve the author's voice. Personal knowledge base, not neutral encyclopedia.
-- New atoms get `version: 1`.
-
-### Compile
-
-Take a set of related atoms and produce a wiki page synthesizing them.
-
-Constraints:
-- Group by topic, not one atom per page. Typical wiki page = 3–8 atoms.
-- Filename `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only, no branch prefix in the slug.
-- First line must be `# title`.
-- Use `[[branch/slug]]` for cross-references. The path inside `[[ ]]` must equal an existing wiki page (without `.md`).
-- For temporal claims, use specific dates or version numbers.
-- Footer lists source atoms by id.
-
-If multiple agents compile in parallel: a coordinator pre-locks the slug list (per branch). Each agent fills assigned slugs, never names files.
-
-### Query
-
-User asks a question. You read `index.md` to locate relevant wiki pages, load only those (not the whole wiki), and answer based on them. If the answer requires synthesis worth retaining, propose writing it back as a new atom (or as an edit + version bump on an existing one).
-
-Constraints:
-- Do not load the entire wiki by default. Use `index.md` to scope.
-- Cite which pages you drew from.
-- Distinguish "this is in the wiki" from "this is my synthesis on top of the wiki".
-
-### Lint
-
-Two layers, run in order:
-
-**Programmatic Lint** (`scripts/lint.sh`) — runs first, no LLM needed. Checks ghost links, orphan pages, format violations, outdated markers. Output: `lint-report.md`.
-
-**LLM Lint** — runs after programmatic Lint passes. Read `index.md` plus all wiki pages and check:
-- **Contradictions** — page A says "X is best practice", page B says "X is deprecated". Flag both with paths and quoted segments.
-- **Concept gaps** — multiple pages reference a concept that has no dedicated page. Propose as candidate.
-- **Expired claims** — version numbers, dates, temporal markers in time-sensitive contexts. Verify or flag.
-- **Weak orphans** — pages with weak conceptual link to the rest, even if technically linked.
-
-Append findings to `lint-report.md` under an `## LLM Lint` section, sorted by severity (contradictions > concept gaps > expired claims > weak orphans).
+Read the corresponding `.claude/skills/<name>/SKILL.md` when running each.
 
 ---
 
 ## After every change
 
-Run these in order:
+Two hooks in `.claude/settings.json` handle this automatically:
+- `PostToolUse` on Write/Edit of `wiki/**/*.md` runs `gen-index.sh`.
+- `Stop` at end of turn runs `lint.sh`.
+
+If you're driving the repo without Claude Code, run them yourself:
 
 ```bash
 ./scripts/gen-index.sh                    # rebuild index
-```
-
-Then if you compiled or modified wiki pages:
-
-```bash
 ./scripts/lint.sh                         # programmatic Lint
 ```
 
@@ -284,7 +239,7 @@ Three options for `source_ids`:
 source_ids: ["https://example.com/post/12345"]
 
 # File-based (private materials)
-source_ids: ["lectures/2026-04-12-skill-design.md"]
+source_ids: ["lectures/skill-design.md"]
 
 # Hash-based (when source stability matters)
 source_ids: ["sha256:abc123..."]
@@ -298,6 +253,8 @@ Use hash IDs when you need to detect that a source was modified after extraction
 
 - **Edit an atom's body without bumping `version:`.** The pre-commit hook will reject the commit. If the only change is whitespace/formatting, the hook lets it through unchanged.
 - **Create a new atom for an evolved view.** Edit the existing atom and bump the version. Git keeps the prior text. Don't reintroduce `_archive/` or `superseded_by`.
+- **Add `created:` or `updated:` to frontmatter.** Git and Obsidian Dataview both have these — frontmatter dates drift.
+- **Date-prefix atom filenames.** Same reason. `slug.md`, not `YYYY-MM-DD-slug.md`.
 - **Write to `raw/`.** It is read-only from your perspective.
 - **Invent branches without user approval.** Branch design has independence/scale/boundary criteria.
 - **Prefix wiki slugs with the branch name.** The branch is the folder; the slug is what's inside it. `wiki/mcp/auth.md`, not `wiki/mcp/mcp-auth.md`.
@@ -311,12 +268,9 @@ Use hash IDs when you need to detect that a source was modified after extraction
 
 ## Customizing for your domain
 
-The defaults ship with reasonable opinionated choices. To adapt:
-
 - **Add `source_type` values** for your sources (e.g. `email`, `slack`, `obsidian`).
 - **Add `type` values** if your knowledge has categories beyond the seven defaults.
 - **Adjust temporal regex** in `scripts/lint.sh` to match your conventions.
-- **Define your own branch boundary table** in your fork's methodology notes.
 - **Tune length thresholds** if your wiki style is denser or looser than 1500–2500 words.
 
 Document any deviation — rules and scripts are coupled, divergence without documentation will confuse future contributors (including future-you).
@@ -326,7 +280,3 @@ Document any deviation — rules and scripts are coupled, divergence without doc
 ## When in doubt
 
 Defer to the user. This repo represents their knowledge, organized to their standards. Your job is to operate the pipeline reliably, not to make judgment calls about what their knowledge should look like. If something feels ambiguous, surface it instead of guessing.
-
----
-
-*This schema corresponds to Karpathy's CLAUDE.md role in the original LLM Wiki gist, extended with the four optimizations this repo adds (atom layer, topic-branches, two-layer Lint, parallel-compile naming locks) and a git-native history model (mutable atoms with `version:` field, pre-commit hook enforcing version bumps).*

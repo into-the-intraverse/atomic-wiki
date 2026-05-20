@@ -1,38 +1,16 @@
-# ─── Personal content (the whole point of this repo is the framework, not your content) ───
-#
-# IMPORTANT: this template ships with atoms/ and wiki/ gitignored so the public framework
-# repo stays content-free. In YOUR fork, REMOVE the `atoms/*` and `wiki/*` blocks below —
-# atom version history lives in git (the `version:` frontmatter field is just a marker;
-# the `pre-commit` hook checks it was bumped before each substantive change), so atoms
-# must be tracked for the model to work.
-
-# Raw source materials
+# Raw source materials (personal, not for the repo)
 raw/*
 !raw/README.md
 !raw/.gitkeep
-
-# Atoms — REMOVE THIS BLOCK IN YOUR FORK so git can record atom history
-atoms/*
-!atoms/README.md
-!atoms/_template.md
-!atoms/.gitkeep
-
-# Compiled wiki pages — REMOVE THIS BLOCK IN YOUR FORK
-wiki/*
-!wiki/_template.md
-!wiki/.gitkeep
 
 # Auto-generated artifacts
 index.md
 lint-report.md
 
-# Personal notes / analysis (not for the public repo)
+# Personal notes / analysis
 GAP-ANALYSIS.md
 
-# ─── Python / OS / editor noise ───
-Python/
-__pycache__/
-*.pyc
+# OS / editor noise
 .DS_Store
 Thumbs.db
 *.swp
@@ -41,3 +19,5 @@ Thumbs.db
 .idea/
 .vscode/
 .obsidian/
+__pycache__/
+*.pyc
