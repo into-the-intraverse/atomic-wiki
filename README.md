@@ -47,7 +47,7 @@ Two plugin hooks run automatically in any wiki project:
 - **PostToolUse on `wiki/**/*.md` writes** — reruns `scripts/gen-index.sh` to keep `index.md` fresh.
 - **Stop (end of turn)** — reruns `scripts/lint.sh` for the fast programmatic lint pass.
 
-Both hooks no-op when the current working directory is not a wiki project (i.e., when `atoms/` does not exist at the repo root).
+Both hooks no-op when the current working directory is not a wiki project (i.e., when `wiki/` does not exist at the repo root).
 
 The LLM semantic lint inside `/atomic-wiki:lint` is intentionally not run on every Stop — it is slow and expensive. Schedule it instead:
 
