@@ -71,6 +71,14 @@ Without a slug lock, parallel agents will invent different filenames for overlap
 
 ## After compile
 
-The `PostToolUse` hook in `.claude/settings.json` rebuilds `index.md` automatically when you write a wiki file. The `Stop` hook runs `lint.sh` at end of turn. Commit when ready.
+After writing or updating wiki pages, run:
 
-See `CLAUDE.md` and `METHODOLOGY.md` (Phase 6) for the full reasoning.
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/gen-index.sh"
+```
+
+This regenerates `index.md` (belt-and-suspenders — the **atomic-wiki plugin** also ships a `PostToolUse` hook that rebuilds `index.md` when you write a `wiki/` file, and a `Stop` hook that runs the lint). Commit when ready.
+
+If a wiki page is wrong because the underlying atom is wrong, fix the atom and recompile — never patch the wiki directly. The atom is truth; the wiki is a derived cache.
+
+See `${CLAUDE_PLUGIN_ROOT}/reference/SCHEMA.md` and `${CLAUDE_PLUGIN_ROOT}/METHODOLOGY.md` (Phase 6) for the full reasoning.

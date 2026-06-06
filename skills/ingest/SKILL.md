@@ -24,7 +24,7 @@ Read raw material from `raw/` (or any path the user names), classify each segmen
    - One atom equals one claim. If a passage contains two views, and removing one leaves the other intact, split into two atoms.
    - Refine, don't copy. Strip filler from the source; preserve the author's voice and stance.
    - Place atoms under the matching `atoms/<branch>/` folder.
-   - If no branch fits, list the segment as a deferred candidate and surface it to the user. **Do not invent branches without user approval.**
+   - If no branch fits, list the segment as a deferred candidate and surface it to the user. See the branch-design criteria below — **do not create a new branch without user approval.**
 4. **Write the atom file.** Use the frontmatter format below. New atoms get `version: 1`.
 
 ## Atom frontmatter
@@ -60,4 +60,15 @@ version: 1
 - The user decides whether deferred candidates get extracted later or whether new branches should be approved.
 - Commit when the user is satisfied. The pre-commit hook will enforce `version: 1` on new atoms.
 
-See `CLAUDE.md` and `METHODOLOGY.md` (Phase 2 + Phase 3) for the full reasoning.
+## Branch-design criteria
+
+Add a new branch only when ALL four of the following hold:
+
+1. **Independence** — the topic doesn't fit cleanly under any existing branch.
+2. **Scale** — you expect 5+ atoms in this branch.
+3. **Clear boundary** — you can state in one paragraph what belongs and what doesn't.
+4. **Teaching independence** — the branch could anchor a 30-minute talk on its own.
+
+If only 1–2 atoms fit a candidate topic, use `tags` instead of creating a new branch. Still require user approval before creating any branch.
+
+See `${CLAUDE_PLUGIN_ROOT}/reference/SCHEMA.md` and `${CLAUDE_PLUGIN_ROOT}/METHODOLOGY.md` (Phase 2 + Phase 3) for the full reasoning.

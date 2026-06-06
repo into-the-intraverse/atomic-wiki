@@ -40,6 +40,6 @@ If the user accepts a write-back:
 - Edited atom → bump `version:`, the pre-commit hook will enforce it.
 - Recompile any affected wiki page.
 
-The `PostToolUse` hook auto-rebuilds the index; the `Stop` hook auto-lints.
+The **atomic-wiki plugin** ships a `PostToolUse` hook that auto-rebuilds the index and a `Stop` hook that auto-lints.
 
-See `CLAUDE.md` for the full spec.
+See `${CLAUDE_PLUGIN_ROOT}/reference/SCHEMA.md` for the full spec.

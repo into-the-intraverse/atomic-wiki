@@ -24,7 +24,7 @@ Two layers, run in order:
 Run the script:
 
 ```bash
-./scripts/lint.sh
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh"
 ```
 
 It writes findings to `lint-report.md` at the repo root. Checks:
@@ -53,11 +53,19 @@ Append findings to `lint-report.md` under an `## LLM Lint` section, sorted by se
 
 For each finding, include: page path(s), quoted segment(s), proposed action.
 
-### 3. Surface to the user
+### 3. In-session version-bump check
+
+Before surfacing findings, scan every atom file that was written or edited during this session. For each, compare the current body to `HEAD` (ignoring pure whitespace and blank lines). If the body changed substantively and `version:` is not strictly greater than the committed value, flag it:
+
+> Atom `atoms/<branch>/<slug>.md`: body changed since HEAD but `version:` was not bumped. Bump `version:` before committing.
+
+This mirrors what `${CLAUDE_PLUGIN_ROOT}/scripts/check-version-bump.sh` enforces at commit time, but catches the problem earlier. Report only — do not auto-bump.
+
+### 4. Surface to the user
 
 Summarize: counts per category, top 3 most-important findings, suggested fixes. The user decides which to act on.
 
-### 4. Acting on findings
+### 5. Acting on findings
 
 If the user asks you to fix issues:
 - Page contradictions → trace back to the atoms, fix the atom (bump `version:`), recompile the affected wiki pages.
@@ -73,4 +81,4 @@ Never patch a wiki page to hide an atom-layer problem. The atom is truth.
 - Lint reads wiki, not atoms. Atom-layer audit is a separate, less-frequent operation.
 - `lint-report.md` is auto-generated and gitignored — don't commit it.
 
-See `CLAUDE.md` and `METHODOLOGY.md` for the full reasoning.
+See `${CLAUDE_PLUGIN_ROOT}/reference/SCHEMA.md` and `${CLAUDE_PLUGIN_ROOT}/METHODOLOGY.md` for the full reasoning.
