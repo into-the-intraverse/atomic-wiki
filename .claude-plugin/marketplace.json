@@ -1,0 +1,11 @@
+{
+  "name": "atomic-wiki",
+  "owner": { "name": "aleksej pawlowskij" },
+  "plugins": [
+    {
+      "name": "atomic-wiki",
+      "source": ".",
+      "description": "Ingest -> atoms -> compile -> wiki -> query pipeline with automated lint maintenance"
+    }
+  ]
+}
