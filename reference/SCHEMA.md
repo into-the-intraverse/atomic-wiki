@@ -19,7 +19,7 @@ wiki/                 compiled pages, mirrors the atom branch tree
 index.md              auto-generated wiki navigation
 ```
 
-Atoms are mutable but versioned: edit the atom in place, bump the integer in `version:` when the body changed beyond formatting. Git is the audit trail — `git log atoms/<branch>/<file>.md` shows every prior version. The pre-commit hook (`scripts/hooks/pre-commit`) refuses commits where an atom's body changed without a version bump.
+Atoms are mutable but versioned: edit the atom in place, bump the integer in `version:` when the body changed beyond formatting. Git is the audit trail — `git log atoms/<branch>/<file>.md` shows every prior version. The pre-commit hook (installed by `/atomic-wiki:init`, running the vendored `.wiki/check-version-bump.sh`) refuses commits where an atom's body changed without a version bump.
 
 Wiki is rebuildable from atoms. If a wiki page is wrong, fix the underlying atom and recompile, never patch the wiki.
 
@@ -80,7 +80,7 @@ When knowledge evolves (view changes, technology updates, better wording):
 3. Commit. Git keeps the prior text in history; `git log -p atoms/<branch>/<file>.md` retrieves it.
 4. Recompile any wiki page that referenced the atom.
 
-The pre-commit hook (`scripts/check-version-bump.sh`) compares the staged file against `HEAD` ignoring whitespace and blank lines. If anything substantive changed, the hook requires `version:` to be strictly greater than the previous value. New atoms must declare `version: 1`.
+The pre-commit hook (installed by `/atomic-wiki:init`, vendored to `.wiki/check-version-bump.sh`) compares the staged file against `HEAD` ignoring whitespace and blank lines. If anything substantive changed, the hook requires `version:` to be strictly greater than the previous value. New atoms must declare `version: 1`.
 
 Pure formatting commits (whitespace cleanup, blank-line normalization) pass without a bump.
 
@@ -191,33 +191,33 @@ When adding/merging/splitting:
 
 ## Operations
 
-The four operations live as skills under `.claude/skills/`. Each skill spells out the constraints and the script it runs:
+The four operations are skills provided by the **atomic-wiki** plugin, invoked as `/atomic-wiki:<name>`. Use `/atomic-wiki:init` to scaffold a new project. Each skill spells out the constraints and the script it runs:
 
 | Skill | Trigger | Purpose |
 |---|---|---|
-| `/ingest` | new material in `raw/` | classify segments, extract atoms into the matching branch |
-| `/compile` | new or changed atoms | group atoms into a wiki page (typical = 3–8 atoms per page) |
-| `/lint` | periodic or pre-commit | programmatic check + LLM semantic check |
-| `/query` | answering a question | read `index.md`, load relevant pages, answer |
+| `/atomic-wiki:ingest` | new material in `raw/` | classify segments, extract atoms into the matching branch |
+| `/atomic-wiki:compile` | new or changed atoms | group atoms into a wiki page (typical = 3–8 atoms per page) |
+| `/atomic-wiki:lint` | periodic or pre-commit | programmatic check + LLM semantic check |
+| `/atomic-wiki:query` | answering a question | read `index.md`, load relevant pages, answer |
 
-Read the corresponding `.claude/skills/<name>/SKILL.md` when running each.
+Read the corresponding skill's `SKILL.md` in the plugin when running each.
 
 ---
 
 ## After every change
 
-Two hooks in `.claude/settings.json` handle this automatically:
+The **atomic-wiki** plugin ships two hooks that handle this automatically:
 - `PostToolUse` on Write/Edit of `wiki/**/*.md` runs `gen-index.sh`.
 - `Stop` at end of turn runs `lint.sh`.
 
 If you're driving the repo without Claude Code, run them yourself:
 
 ```bash
-./scripts/gen-index.sh                    # rebuild index
-./scripts/lint.sh                         # programmatic Lint
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/gen-index.sh"   # rebuild index
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh"         # programmatic Lint
 ```
 
-Commit your changes. The pre-commit hook checks atom version bumps automatically; your commit message is the change log.
+Commit your changes. The pre-commit hook (installed by `/atomic-wiki:init`; re-run init after a fresh clone to restore it) checks atom version bumps automatically; your commit message is the change log.
 
 ```bash
 git add atoms/<branch>/<file>.md wiki/<branch>/<page>.md
@@ -270,7 +270,7 @@ Use hash IDs when you need to detect that a source was modified after extraction
 
 - **Add `source_type` values** for your sources (e.g. `email`, `slack`, `obsidian`).
 - **Add `type` values** if your knowledge has categories beyond the seven defaults.
-- **Adjust temporal regex** in `scripts/lint.sh` to match your conventions.
+- **Adjust temporal regex** in `${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh` to match your conventions.
 - **Tune length thresholds** if your wiki style is denser or looser than 1500–2500 words.
 
 Document any deviation — rules and scripts are coupled, divergence without documentation will confuse future contributors (including future-you).
