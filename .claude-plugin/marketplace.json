@@ -4,7 +4,7 @@
   "plugins": [
     {
       "name": "atomic-wiki",
-      "source": ".",
+      "source": "./",
       "description": "Ingest -> atoms -> compile -> wiki -> query pipeline with automated lint maintenance"
     }
   ]
