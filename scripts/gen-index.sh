@@ -5,8 +5,10 @@
 # Branches are auto-discovered from the subfolders of wiki/. To control order or
 # display names (e.g. "MCP" instead of "Mcp"), edit the BRANCHES override below.
 
-WIKI_DIR="$(cd "$(dirname "$0")/../wiki" && pwd)"
-INDEX="$WIKI_DIR/../index.md"
+ROOT="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -d "$ROOT/wiki" ] || exit 0      # not a wiki project -> no-op silently
+WIKI_DIR="$ROOT/wiki"
+INDEX="$ROOT/index.md"
 
 # ─── Branch order and display names ───
 # Format: "branch-folder|Display Name". Leave empty for auto-discovery.
