@@ -1,6 +1,6 @@
 ---
 name: query
-description: Answer a question by reading the wiki. Use when the user runs /query, or asks a question that should be answered from compiled knowledge rather than from raw or from the model's own priors.
+description: Answer a question by reading the wiki. Use when the user runs /atomic-wiki:query, or asks a question that should be answered from compiled knowledge rather than from raw or from the model's own priors.
 ---
 
 # Query
@@ -9,7 +9,7 @@ Answer the user's question by reading `index.md`, loading only the relevant wiki
 
 ## When to use
 
-- User runs `/query <question>`.
+- User runs `/atomic-wiki:query <question>`.
 - User asks any question that could plausibly be answered from the wiki (the compiled knowledge base is the first place to look, not the last).
 
 ## Procedure
@@ -29,7 +29,7 @@ Answer the user's question by reading `index.md`, loading only the relevant wiki
 ## Constraints
 
 - **Do not load the entire wiki by default.** The whole point of `index.md` is to scope the read.
-- **Do not search `raw/`.** Raw is for `/ingest`, not for `/query`. If a page is missing knowledge that exists in raw, the answer is to run `/ingest`, not to bypass the wiki.
+- **Do not search `raw/`.** Raw is for `/atomic-wiki:ingest`, not for `/atomic-wiki:query`. If a page is missing knowledge that exists in raw, the answer is to run `/atomic-wiki:ingest`, not to bypass the wiki.
 - **Cite pages.** Every claim in the answer traces to a page slug, or is explicitly marked as synthesis.
 - **Respect the wiki's stance.** If two pages disagree, surface the disagreement (and flag it as a candidate Lint finding) rather than picking one silently.
 

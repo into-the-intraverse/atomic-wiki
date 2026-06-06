@@ -1,6 +1,6 @@
 ---
 name: compile
-description: Group related atoms into a wiki page. Use when the user runs /compile, or when enough new atoms have accumulated in a branch to warrant compiling them.
+description: Group related atoms into a wiki page. Use when the user runs /atomic-wiki:compile, or when enough new atoms have accumulated in a branch to warrant compiling them.
 ---
 
 # Compile
@@ -9,7 +9,7 @@ Take a set of related atoms from `atoms/<branch>/` and produce a wiki page at `w
 
 ## When to use
 
-- User runs `/compile <branch>` or `/compile <branch> <slug>`.
+- User runs `/atomic-wiki:compile <branch>` or `/atomic-wiki:compile <branch> <slug>`.
 - A branch has accumulated 3–8 new atoms on a coherent subtopic.
 - An existing wiki page needs to be rebuilt because one of its source atoms changed (look at the footer `*Compiled from atoms: ...*` line).
 

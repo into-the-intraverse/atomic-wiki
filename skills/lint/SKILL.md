@@ -1,18 +1,18 @@
 ---
 name: lint
-description: Run the two-layer wiki health check (programmatic + LLM semantic). Use when the user runs /lint, periodically (quarterly), or after a large compile pass.
+description: Run the two-layer wiki health check (programmatic + LLM semantic). Use when the user runs /atomic-wiki:lint, periodically (quarterly), or after a large compile pass.
 ---
 
 # Lint
 
 Two layers, run in order:
 
-1. **Programmatic Lint** (`scripts/lint.sh`) — fast deterministic checks.
+1. **Programmatic Lint** (`${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh`) — fast deterministic checks.
 2. **LLM Lint** — semantic checks that need reading and reasoning.
 
 ## When to use
 
-- User runs `/lint`.
+- User runs `/atomic-wiki:lint`.
 - After a large compile pass (many new wiki pages).
 - Periodic audit — quarterly is a reasonable cadence for stable knowledge.
 - Whenever the user wants confidence that the wiki is internally consistent.
@@ -69,7 +69,7 @@ Summarize: counts per category, top 3 most-important findings, suggested fixes. 
 
 If the user asks you to fix issues:
 - Page contradictions → trace back to the atoms, fix the atom (bump `version:`), recompile the affected wiki pages.
-- Concept gaps → propose a new wiki page; if approved, run `/compile`.
+- Concept gaps → propose a new wiki page; if approved, run `/atomic-wiki:compile`.
 - Expired claims → update the atom, bump `version:`, recompile.
 - Weak orphans → either add links from related pages, merge into a parent page, or accept and move on.
 

@@ -1,6 +1,6 @@
 ---
 name: ingest
-description: Extract knowledge atoms from raw source material. Use when the user runs /ingest, or when new files appear in raw/ and the user asks you to process them.
+description: Extract knowledge atoms from raw source material. Use when the user runs /atomic-wiki:ingest, or when new files appear in raw/ and the user asks you to process them.
 ---
 
 # Ingest
@@ -9,7 +9,7 @@ Read raw material from `raw/` (or any path the user names), classify each segmen
 
 ## When to use
 
-- User runs `/ingest <file-or-folder>`.
+- User runs `/atomic-wiki:ingest <file-or-folder>`.
 - User drops new material into `raw/` and asks you to process it.
 - During the lifecycle of any operation that produces new knowledge worth retaining (e.g., a Query that surfaces a synthesis the user wants captured).
 

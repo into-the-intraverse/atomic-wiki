@@ -1,14 +1,6 @@
-# Raw source materials (personal, not for the repo)
-raw/*
-!raw/README.md
-!raw/.gitkeep
-
 # Auto-generated artifacts
 index.md
 lint-report.md
-
-# Personal notes / analysis
-GAP-ANALYSIS.md
 
 # OS / editor noise
 .DS_Store
