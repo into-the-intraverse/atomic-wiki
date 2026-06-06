@@ -1,73 +1,75 @@
-# llm-atomic-wiki
+# atomic-wiki
 
-> Fork of [cablate/llm-atomic-wiki](https://github.com/cablate/llm-atomic-wiki), which extends [Karpathy's LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) with an atom layer, topic-branches, two-layer lint, and git-native versioned history. This repo is my personal template — same pattern, my own tweaks.
-
-A knowledge-base pipeline for turning scattered material (notes, posts, transcripts, articles) into a queryable wiki. The LLM does the bookkeeping; you keep the editorial voice.
-
-```
-┌─────────┐  Ingest    ┌──────────────┐  Compile   ┌──────────────┐
-│  raw/   │ ─────────▶ │ atoms/       │ ─────────▶ │ wiki/        │
-│         │  (LLM      │  <branch>/   │  (LLM      │  <branch>/   │
-│ sources │  extract)  │   atom.md    │  group)    │   page.md    │
-└─────────┘            │   atom.md    │            └──────┬───────┘
-                       └──────────────┘                   │
-                                ┌─────────────────────────┴─────────────────────────┐
-                                ▼                                                   ▼
-                          gen-index.sh                                          lint.sh
-                              │                                                     │
-                              ▼                                                     ▼
-                          index.md                                            lint-report.md
-```
-
-Atoms are mutable but versioned. Edit in place, bump `version:` in the frontmatter. The pre-commit hook refuses commits where an atom's body changed beyond whitespace without a version bump. Git is the audit trail; there is no `_archive/` folder.
+atomic-wiki is a Claude Code plugin that runs a structured knowledge pipeline: raw sources drop in, an LLM extracts single-claim notes called atoms, atoms get compiled into coherent wiki pages, and a query skill answers questions against the result. The plugin is pure machinery — skills, scripts, hooks, schema, and templates. Each project that uses it holds its own content (`atoms/`, `wiki/`, `raw/`, `index.md`) at its git root; the plugin never touches that content tree directly except through the skills you invoke.
 
 ---
 
-## Repo layout
+## Install
 
 ```
-.
-├── CLAUDE.md              ← formal spec for any LLM operating this repo
-├── METHODOLOGY.md         ← the why behind the pipeline (decision track)
-├── README.md
-│
-├── raw/                   ← drop source materials here (gitignored)
-│
-├── atoms/                 ← knowledge atoms, organized by topic-branch
-│   ├── _template.md       ← copy when creating a new atom
-│   └── <branch>/<slug>.md
-│
-├── wiki/                  ← compiled pages, mirrored branch tree
-│   ├── _template.md       ← copy when creating a new wiki page
-│   └── <branch>/<slug>.md
-│
-├── index.md               ← auto-generated (gitignored)
-├── lint-report.md         ← auto-generated (gitignored)
-│
-├── scripts/               ← gen-index.sh, lint.sh, check-version-bump.sh, hooks/
-└── .claude/
-    ├── skills/            ← /ingest, /compile, /lint, /query
-    └── settings.json      ← PostToolUse + Stop + SessionStart hooks
+/plugin marketplace add D:/code/llm-atomic-wiki   # local path, or the GitHub URL once pushed
+/plugin install atomic-wiki@atomic-wiki
+```
+
+During development, load the plugin without installing it by pointing Claude Code at the plugin directory:
+
+```
+claude --plugin-dir D:/code/llm-atomic-wiki
 ```
 
 ---
 
-## Quickstart
+## Set up a project
 
-1. **Install the git pre-commit hook** — `./scripts/install-hooks.sh`. (The `SessionStart` hook in `.claude/settings.json` does this automatically when you open the repo with Claude Code.)
-2. **Drop materials into `raw/`** — any text format. PDFs, transcripts, post dumps, articles.
-3. **Run an operation** from inside Claude Code:
-   - `/ingest <file-or-folder>` — extract atoms from raw
-   - `/compile <branch>` — group atoms into a wiki page
-   - `/lint` — programmatic + LLM lint pass
-   - `/query <question>` — answer from the wiki
-4. **Commit.** The `PostToolUse` hook keeps `index.md` fresh; the `Stop` hook re-runs `lint.sh`; the pre-commit hook enforces version bumps.
+Run once in the target repository:
 
-The loop is `Ingest → Compile → Index/Lint → Commit → Query`.
+```
+/atomic-wiki:init
+```
+
+This scaffolds `atoms/`, `wiki/`, `raw/`, copies the atom and wiki templates, writes `.gitignore` entries for the generated files (`index.md`, `lint-report.md`), and installs the version-bump pre-commit hook (see below).
+
+After that, the four pipeline skills are available in any Claude Code session opened in that repo:
+
+| Skill | What it does |
+|---|---|
+| `/atomic-wiki:ingest` | Classify segments of a raw source and extract atoms into the matching branch |
+| `/atomic-wiki:compile` | Group atoms from a branch into a coherent wiki page |
+| `/atomic-wiki:lint` | Programmatic checks + LLM semantic review of atoms and wiki pages |
+| `/atomic-wiki:query` | Read `index.md`, load relevant pages, answer a question from the wiki |
 
 ---
 
-## Deep dives
+## Automation
 
-- **[METHODOLOGY.md](METHODOLOGY.md)** — the six-phase pipeline and the reasoning behind each architectural choice.
-- **[CLAUDE.md](CLAUDE.md)** — the formal spec (atom format, wiki format, branch rules, operations, what not to do).
+Two plugin hooks run automatically in any wiki project:
+
+- **PostToolUse on `wiki/**/*.md` writes** — reruns `scripts/gen-index.sh` to keep `index.md` fresh.
+- **Stop (end of turn)** — reruns `scripts/lint.sh` for the fast programmatic lint pass.
+
+Both hooks no-op when the current working directory is not a wiki project (i.e., when `atoms/` does not exist at the repo root).
+
+The LLM semantic lint inside `/atomic-wiki:lint` is intentionally not run on every Stop — it is slow and expensive. Schedule it instead:
+
+```
+/schedule
+```
+
+Point the scheduled agent at `/atomic-wiki:lint` with whatever cadence fits your workflow.
+
+---
+
+## Version-bump enforcement
+
+`/atomic-wiki:init` installs a pre-commit hook that rejects any commit where an atom's body changed beyond whitespace without a corresponding `version:` increment in its frontmatter. Git is the audit trail; there is no archive folder.
+
+The hook uses git ≥ 2.54 config-based installation if available, and falls back to writing `.git/hooks/pre-commit` directly. The hook is per-clone — re-run `/atomic-wiki:init` after cloning a wiki project to a new machine.
+
+Pure formatting commits (whitespace cleanup, blank-line normalization) pass without a bump.
+
+---
+
+## Learn more
+
+- **[METHODOLOGY.md](METHODOLOGY.md)** — the reasoning behind the pipeline: why atoms are mutable rather than append-only, why git is the version store, why the wiki is a derived cache and not the source of truth.
+- **[reference/SCHEMA.md](reference/SCHEMA.md)** — the full formal spec: atom frontmatter fields, filename rules, wiki page format, branch design criteria, and what the pre-commit hook enforces.
