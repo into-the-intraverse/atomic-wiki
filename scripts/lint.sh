@@ -3,8 +3,10 @@
 # Checks: ghost links, orphan pages, format violations, outdated markers.
 # Output: lint-report.md at repo root.
 
-WIKI_DIR="$(cd "$(dirname "$0")/../wiki" && pwd)"
-REPORT="$WIKI_DIR/../lint-report.md"
+ROOT="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -d "$ROOT/wiki" ] || exit 0      # not a wiki project -> no-op silently
+WIKI_DIR="$ROOT/wiki"
+REPORT="$ROOT/lint-report.md"
 ERRORS=0
 WARNINGS=0
 
