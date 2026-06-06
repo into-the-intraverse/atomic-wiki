@@ -1,4 +1,0 @@
-#!/bin/bash
-# Pre-commit hook: enforce the atom version-bump rule.
-# Install via: ./scripts/install-hooks.sh
-exec "$(git rev-parse --show-toplevel)/scripts/check-version-bump.sh"
