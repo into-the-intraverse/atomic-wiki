@@ -1,6 +1,7 @@
 #!/bin/bash
 # Verifies the installer vendors the check script and registers a working pre-commit hook
 # (config-based on git >= 2.54, else file-based), and that the hook rejects an unbumped body change.
+# NOTE: on git >= 2.54 only the config-based path is exercised; the file-based fallback is not.
 set -u
 PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALLER="$PLUGIN_DIR/scripts/install-versionbump-hook.sh"

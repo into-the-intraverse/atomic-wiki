@@ -15,11 +15,13 @@ chmod +x "$ROOT/.wiki/check-version-bump.sh"
 # Parse git version major.minor.
 gv="$(git --version | grep -oE '[0-9]+\.[0-9]+' | head -1)"
 gmaj="${gv%%.*}"; gmin="${gv#*.}"
+if [ -z "$gv" ]; then echo "atomic-wiki: ERROR cannot parse git version from '$(git --version)'" >&2; exit 1; fi
 
 if [ "$gmaj" -gt 2 ] || { [ "$gmaj" -eq 2 ] && [ "$gmin" -ge 54 ]; }; then
   # Config-based hook (coexists with any existing .git/hooks/pre-commit).
   git config --local hook.atomic-wiki-versionbump.event pre-commit
-  git config --local hook.atomic-wiki-versionbump.command "$ROOT/.wiki/check-version-bump.sh"
+  # Dynamic root resolution (survives repo moves); mirrors the file-based fallback.
+  git config --local hook.atomic-wiki-versionbump.command 'bash "$(git rev-parse --show-toplevel)/.wiki/check-version-bump.sh"'
   echo "atomic-wiki: registered config-based pre-commit hook (git $gv)."
 else
   # File-based fallback. Generate a pre-commit that calls the vendored script.
