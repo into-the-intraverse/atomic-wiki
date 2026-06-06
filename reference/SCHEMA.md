@@ -1,6 +1,6 @@
-# CLAUDE.md — Schema for LLMs operating this repo
+# Atomic Wiki — Schema for LLMs operating a wiki
 
-Formal spec — read it before touching anything. Mental model, file formats, lifecycle rules, what you must never do. The reasoning behind each choice lives in [METHODOLOGY.md](METHODOLOGY.md).
+Formal spec — read it before touching anything. Mental model, file formats, lifecycle rules, what you must never do. The reasoning behind each choice lives in [METHODOLOGY.md](../METHODOLOGY.md).
 
 ---
 
@@ -86,7 +86,7 @@ Pure formatting commits (whitespace cleanup, blank-line normalization) pass with
 
 You do not need an `_archive/` folder and you do not need a `superseded_by` field — git is the archive.
 
-See `atoms/_template.md` for a copyable starter.
+See `templates/atom.md` for a copyable starter.
 
 ---
 
@@ -149,7 +149,7 @@ In time-sensitive claims, use one of:
 
 Avoid bare `currently` / `latest` / `now` in time-sensitive contexts. Lint regex flags only `<temporal word> <version/date>` combinations to avoid false-positive flooding from rhetorical use.
 
-See `wiki/_template.md` for a copyable starter.
+See `templates/wiki-page.md` for a copyable starter.
 
 ---
 
