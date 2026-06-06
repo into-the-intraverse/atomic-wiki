@@ -279,9 +279,8 @@ question     --/query--> read index.md + selected pages -> answer
 - Working directory of a config-based hook `command` — doesn't affect us (script self-resolves its
   root; we register an absolute path), but worth confirming.
 - Exact `marketplace.json` `source` field shape for a plugin at the repo root.
-- `/skill-creator` availability — the user wants skills authored with it; it is **not** currently
-  registered in the session (only `superpowers:writing-skills`). Confirm/install before authoring
-  the `SKILL.md` files.
+- Skill authoring uses the **`superpowers:writing-skills`** skill for every new/edited `SKILL.md`
+  (user-confirmed 2026-06-06). No `/skill-creator` dependency.
 
 ---
 
@@ -298,7 +297,7 @@ question     --/query--> read index.md + selected pages -> answer
    Remove now-content-only `atoms/`, `wiki/`, `raw/`, `_inbox/` from the machinery repo.
 7. Add `skills/init/SKILL.md` (`/wiki-init`) implementing §6.
 8. Update `README.md` (install + usage) and keep `METHODOLOGY.md` as the "why".
-9. Author/adjust skills with `/skill-creator` (pending availability).
+9. Author/adjust skills using the **`superpowers:writing-skills`** skill.
 
 ---
 
