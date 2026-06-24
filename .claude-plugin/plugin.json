@@ -1,8 +1,7 @@
 {
   "name": "atomic-wiki",
   "displayName": "Atomic Wiki",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ingest -> atoms -> compile -> wiki -> query pipeline with automated lint maintenance",
-  "author": { "name": "aleksej pawlowskij", "email": "1394349+into-the-intraverse@users.noreply.github.com" },
-  "hooks": "./hooks/hooks.json"
+  "author": { "name": "aleksej pawlowskij", "email": "1394349+into-the-intraverse@users.noreply.github.com" }
 }
