@@ -21,5 +21,19 @@ t3="$(mktemp -d)"
 ( cd "$t3" && CLAUDE_PROJECT_DIR="$t3" bash "$GEN" >/dev/null 2>&1 ); rc=$?
 if [ "$rc" -eq 0 ] && [ ! -f "$t3/index.md" ]; then echo "PASS case3"; else echo "FAIL case3 rc=$rc"; fail=1; fi
 
-rm -rf "$t1" "$t2" "$t3"
+# Case 4: the `> summary` line under the title lands in the index; pipes are escaped;
+# a page without a summary is still listed, with an empty cell.
+t4="$(mktemp -d)"; git -C "$t4" init -q
+mkdir -p "$t4/wiki/mcp"
+printf '# Auth\n\n> Token flow | expiry.\n\nbody\n' > "$t4/wiki/mcp/auth.md"
+printf '# Transport\n\nbody\n' > "$t4/wiki/mcp/transport.md"
+( cd "$t4" && CLAUDE_PROJECT_DIR="$t4" bash "$GEN" >/dev/null 2>&1 )
+if grep -qF '| [[mcp/auth]] | Auth | Token flow \| expiry. |' "$t4/index.md" \
+   && grep -qF '| [[mcp/transport]] | Transport |  |' "$t4/index.md"; then
+  echo "PASS case4"
+else
+  echo "FAIL case4"; fail=1
+fi
+
+rm -rf "$t1" "$t2" "$t3" "$t4"
 exit $fail

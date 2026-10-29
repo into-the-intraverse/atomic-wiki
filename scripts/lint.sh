@@ -1,6 +1,7 @@
 #!/bin/bash
 # Wiki Lint — Programmatic Layer
-# Checks: ghost links, orphan pages, format violations, outdated markers, ghost image embeds.
+# Checks: ghost links, orphan pages, format violations, outdated markers, ghost image embeds,
+# missing summaries.
 # Output: lint-report.md at repo root.
 
 ROOT="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -172,6 +173,27 @@ while IFS= read -r f; do
 done < <(find "$ROOT/atoms" "$WIKI_DIR" -type f -name '*.md' 2>/dev/null)
 
 if [ $FOUND_GHOST_IMG -eq 0 ]; then
+  echo "None." >> "$REPORT"
+fi
+echo "" >> "$REPORT"
+
+# ─── 6. Missing Summaries ───
+# The first non-blank line after the title must be a `> summary` blockquote —
+# gen-index.sh copies it into index.md so pages can be picked without opening them.
+echo "## 6. Missing Summaries (no \`> summary\` line under the title)" >> "$REPORT"
+echo "" >> "$REPORT"
+FOUND_NO_SUMMARY=0
+
+for slug in $(echo "${!SLUGS[@]}" | tr ' ' '\n' | sort); do
+  f="$WIKI_DIR/$slug.md"
+  if ! awk 'NR==1{next} /^[[:space:]]*$/{next} {found = /^> ?[^[:space:]]/; exit} END{exit !found}' "$f"; then
+    echo "- \`$slug\`" >> "$REPORT"
+    FOUND_NO_SUMMARY=1
+    ((WARNINGS++))
+  fi
+done
+
+if [ $FOUND_NO_SUMMARY -eq 0 ]; then
   echo "None." >> "$REPORT"
 fi
 echo "" >> "$REPORT"

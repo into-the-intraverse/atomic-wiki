@@ -18,15 +18,18 @@ Take a set of related atoms from `atoms/<branch>/` and produce a wiki page at `w
 1. **Pick the scope.** Either the user specifies the slug(s), or you propose a grouping: "these 5 atoms cluster around X, want me to compile them into `wiki/<branch>/<slug>.md`?"
 2. **Confirm slug naming.** Filename pattern: `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only. The folder carries the branch name — **do not repeat the branch in the slug** (`wiki/mcp/auth.md`, not `wiki/mcp/mcp-auth.md`).
 3. **Synthesize.** Don't dump atoms one per section. Group by what a reader wants to understand. Write coherent prose. Preserve the original voice — wiki is opinionated knowledge, not encyclopedia.
-4. **Cross-reference.** First mention of a related concept links to its page: `[[branch/slug]]`. The path must equal an existing wiki page (relative to `wiki/`, no `.md`). Subsequent mentions in the same page don't repeat the link.
-5. **Carry image embeds.** When a source atom anchors its claim with an embedded image, carry the `![...](../../raw/...)` embed into the page next to the prose that uses it. Wiki pages sit at the same depth as atoms, so the path works verbatim. Don't repeat an image already embedded earlier on the same page.
-6. **Use temporal markers correctly.** Specific dates (`as of 2026-04`) or version numbers (`v3.5`). Avoid bare `currently` / `latest` / `now` in time-sensitive contexts.
-7. **Footer source list.** End with `*Compiled from atoms: branch/atom-a, branch/atom-b, ...*` so the page is traceable.
+4. **Write the summary line.** Directly under the title: `> <one sentence>`. The sentence names what the page covers, in the terms someone would use when asking about it — e.g. `> How MCP servers authenticate clients: OAuth flow, token storage, refresh.` `gen-index.sh` copies it into `index.md`, and `/atomic-wiki:query` picks pages by it without opening them.
+5. **Cross-reference.** First mention of a related concept links to its page: `[[branch/slug]]`. The path must equal an existing wiki page (relative to `wiki/`, no `.md`). Subsequent mentions in the same page don't repeat the link.
+6. **Carry image embeds.** When a source atom anchors its claim with an embedded image, carry the `![...](../../raw/...)` embed into the page next to the prose that uses it. Wiki pages sit at the same depth as atoms, so the path works verbatim. Don't repeat an image already embedded earlier on the same page.
+7. **Use temporal markers correctly.** Specific dates (`as of 2026-04`) or version numbers (`v3.5`). Avoid bare `currently` / `latest` / `now` in time-sensitive contexts.
+8. **Footer source list.** End with `*Compiled from atoms: branch/atom-a, branch/atom-b, ...*` so the page is traceable.
 
 ## Wiki page structure
 
 ```markdown
 # Page Title
+
+> One sentence: what this page covers, in the terms someone would ask about it.
 
 Opening paragraph: why this matters, common misconception, what the reader will get.
 
@@ -66,7 +69,7 @@ Without a slug lock, parallel agents will invent different filenames for overlap
 
 - Group by topic, not one atom per page. Typical wiki page = 3–8 atoms.
 - Filename `wiki/<branch>/<topic-slug>.md`, all lowercase, hyphens only, no branch prefix in the slug.
-- First line must be `# title`.
+- First line must be `# title`; the first non-blank line after it is the `> summary` line.
 - Use `[[branch/slug]]` for cross-references. The path inside `[[ ]]` must equal an existing wiki page.
 - Image embeds keep the `../../raw/...` paths from their atoms; lint flags embeds whose file is missing.
 - Footer lists source atoms by id.

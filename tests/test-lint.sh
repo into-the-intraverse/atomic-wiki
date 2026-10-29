@@ -29,5 +29,18 @@ else
   echo "FAIL case3"; fail=1
 fi
 
-rm -rf "$t1" "$t2" "$t3"
+# Case 4: a page without a `> summary` line under the title is flagged; one with it is not.
+t4="$(mktemp -d)"; git -C "$t4" init -q
+mkdir -p "$t4/wiki/mcp"
+printf '# Auth\n\n> How tokens flow.\n\nbody\n' > "$t4/wiki/mcp/auth.md"
+printf '# Transport\n\nbody\n' > "$t4/wiki/mcp/transport.md"
+( cd "$t4" && CLAUDE_PROJECT_DIR="$t4" bash "$LINT" >/dev/null 2>&1 )
+section="$(sed -n '/^## 6\. Missing Summaries/,/^---$/p' "$t4/lint-report.md")"
+if grep -qF '`mcp/transport`' <<<"$section" && ! grep -qF '`mcp/auth`' <<<"$section"; then
+  echo "PASS case4"
+else
+  echo "FAIL case4"; fail=1
+fi
+
+rm -rf "$t1" "$t2" "$t3" "$t4"
 exit $fail

@@ -8,12 +8,12 @@ Scripts are invoked via `${CLAUDE_PLUGIN_ROOT}/scripts/...` and are not meant to
 
 ## `gen-index.sh`
 
-Rebuilds `index.md` at the consumer's git root from `wiki/<branch>/<page>.md` filenames and first-line titles.
+Rebuilds `index.md` at the consumer's git root from `wiki/<branch>/<page>.md` filenames, first-line titles, and summary lines.
 
 **What it does:**
 1. Resolves the consumer git root (no-ops if not inside a wiki project).
 2. Walks each `wiki/<branch>/` subfolder.
-3. Reads the first line of each page (must be `# Title`) for display.
+3. Reads the first line of each page (must be `# Title`) and the `> summary` line under it (empty cell if missing).
 4. Writes the grouped, alphabetically-sorted index to `index.md`.
 
 **Invoked by:** the atomic-wiki plugin's `PostToolUse` hook (on any Write/Edit to `wiki/**/*.md`) and by `/atomic-wiki:compile`.
@@ -36,7 +36,7 @@ Leave empty (`declare -a BRANCHES=()`) for auto-discovery.
 
 ## `lint.sh`
 
-Programmatic wiki health checks — four deterministic checks, no LLM needed. Writes `lint-report.md` at the consumer's git root.
+Programmatic wiki health checks — deterministic, no LLM needed. Writes `lint-report.md` at the consumer's git root.
 
 **What it does:**
 1. Resolves the consumer git root (no-ops if not inside a wiki project).
@@ -45,6 +45,7 @@ Programmatic wiki health checks — four deterministic checks, no LLM needed. Wr
    - **Orphan pages** — wiki pages with zero incoming `[[ ]]` links (warning).
    - **Format violations** — first line not `# title`, path contains uppercase or underscore, page not under a branch subfolder (error).
    - **Outdated markers** — temporal patterns that need verification (warning).
+   - **Missing summaries** — no `> summary` line under the title (warning).
 
 **Invoked by:** the atomic-wiki plugin's `Stop` hook (end of every turn) and by `/atomic-wiki:lint`.
 

@@ -14,8 +14,8 @@ Answer the user's question by reading `index.md`, loading only the relevant wiki
 
 ## Procedure
 
-1. **Read `index.md`.** This is the navigation layer — branch headers + page slugs + one-line titles. It is small; reading it costs little.
-2. **Locate relevant pages.** Pick 1–5 pages from the index that look like they cover the topic. Err on the side of fewer pages — you can always load more.
+1. **Read `index.md`.** This is the navigation layer — one table per branch: page slug, title, one-sentence summary. It is small; reading it costs little.
+2. **Locate relevant pages.** Pick 1–5 pages whose title or summary covers the topic. Err on the side of fewer pages — you can always load more.
 3. **Read the selected pages.** Follow `[[branch/slug]]` cross-references when one page points to another that's clearly relevant.
 4. **Synthesize the answer.** Cite which pages you drew from. Distinguish:
    - **"This is in the wiki"** — direct quote or close paraphrase from a page.

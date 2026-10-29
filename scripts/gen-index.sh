@@ -1,5 +1,6 @@
 #!/bin/bash
-# Auto-generate index.md from wiki/<branch>/<page>.md filenames + first-line titles.
+# Auto-generate index.md from wiki/<branch>/<page>.md filenames, first-line titles,
+# and the `> summary` line under each title.
 # No LLM needed — pure filesystem scan.
 #
 # Branches are auto-discovered from the subfolders of wiki/. To control order or
@@ -64,14 +65,17 @@ for entry in "${BRANCHES[@]}"; do
 
   echo "## $DISPLAY (${#FILES[@]} pages)" >> "$INDEX"
   echo "" >> "$INDEX"
-  echo "| Slug | Title |" >> "$INDEX"
-  echo "|------|-------|" >> "$INDEX"
+  echo "| Slug | Title | Summary |" >> "$INDEX"
+  echo "|------|-------|---------|" >> "$INDEX"
 
   for f in $(printf '%s\n' "${FILES[@]}" | sort); do
     base=$(basename "$f" .md)
     slug="$PREFIX/$base"
     title=$(head -1 "$f" | sed 's/^# //')
-    echo "| [[$slug]] | $title |" >> "$INDEX"
+    # Summary = first non-blank line after the title, if it is a `> ` blockquote.
+    summary=$(awk 'NR==1{next} /^[[:space:]]*$/{next} {sub(/\r$/, ""); if (sub(/^> ?/, "")) print; exit}' "$f")
+    summary="${summary//|/\\|}"
+    echo "| [[$slug]] | $title | $summary |" >> "$INDEX"
   done
 
   echo "" >> "$INDEX"

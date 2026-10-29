@@ -117,6 +117,10 @@ Pattern: `wiki/<branch>/<topic-slug>.md`
 
 Must be `# Title`. `gen-index.sh` reads this for the index entry. Lint flags violations.
 
+### Summary line
+
+The first non-blank line after the title is `> <one sentence>`: what the page covers, in the terms someone would use when asking about it. `gen-index.sh` copies it into `index.md`, so Query picks pages without opening them. Lint warns when it is missing.
+
 ### Wiki links
 
 Pattern: `[[<branch>/<slug>]]` or `[[<branch>/<slug>|display text]]`
@@ -135,6 +139,8 @@ don't render outside Obsidian.
 
 ```markdown
 # Page Title
+
+> One sentence: what this page covers, in the terms someone would ask about it.
 
 Opening paragraph: why this matters, common misconception, what you'll get.
 

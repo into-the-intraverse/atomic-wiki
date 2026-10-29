@@ -1,5 +1,7 @@
 # Page Title
 
+> One sentence: what this page covers, in the terms someone would ask about it. Copied into index.md.
+
 Opening paragraph. Why this matters, common misconception, what the reader will get from this page. Two or three sentences.
 
 ---
