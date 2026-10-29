@@ -6,9 +6,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/gen-index.sh"],
-            "if": "Write(**/wiki/**)|Edit(**/wiki/**)"
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/gen-index.sh\"",
+            "if": "Write(**/wiki/**)"
+          },
+          {
+            "type": "command",
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/gen-index.sh\"",
+            "if": "Edit(**/wiki/**)"
           }
         ]
       }
@@ -18,8 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh"]
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh\""
           }
         ]
       }
