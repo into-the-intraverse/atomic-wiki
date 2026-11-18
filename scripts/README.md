@@ -46,8 +46,9 @@ Programmatic wiki health checks — deterministic, no LLM needed. Writes `lint-r
    - **Format violations** — first line not `# title`, path contains uppercase or underscore, page not under a branch subfolder (error).
    - **Outdated markers** — temporal patterns that need verification (warning).
    - **Missing summaries** — no `> summary` line under the title (warning).
+   - **Compile debt** — the output of `debt.sh` (warning).
 
-**Invoked by:** the atomic-wiki plugin's `Stop` hook (end of every turn) and by `/atomic-wiki:lint`.
+**Invoked by:** `stop-hook.sh` (end of every turn) and by `/atomic-wiki:lint`.
 
 **Tuning the outdated-marker regex:**
 
@@ -58,6 +59,32 @@ currently v[0-9]|latest v[0-9]|just released|recently released|brand new|newly r
 ```
 
 Loose patterns (`currently|now|today`) flood the report with false positives. If your knowledge base uses different temporal conventions, edit the `PATTERNS` variable in `lint.sh`.
+
+---
+
+## `debt.sh`
+
+Lists the compile debt: what the atoms say that the wiki pages do not yet. One line per item:
+
+- `uncompiled <atom id>` — no page footer names the atom.
+- `stale <atom id> <page slug>` — the footer names an older `version:` of the atom.
+- `gone <atom id> <page slug>` — the footer names an atom that no longer exists.
+
+It reads each page's `*Compiled from atoms: id@version, ...*` footer; an entry without `@version` counts as version 1. `--count` prints only the number of lines.
+
+**Invoked by:** `lint.sh`, `stop-hook.sh` and `/atomic-wiki:compile pending`.
+
+---
+
+## `stop-hook.sh`
+
+The plugin's `Stop` hook. It runs `lint.sh`, then counts the compile debt:
+
+- under 8 lines: nothing more happens;
+- 8 to 40: Claude does not stop; it is told to run `/atomic-wiki:compile pending` and report;
+- over 40: you get a one-line message instead, and run the compile when you choose.
+
+It asks once per debt state (the last one is kept in the git directory, outside the work tree), so a list that a compile pass could not clear does not bring Claude back every turn. To change the two limits, edit `THRESHOLD` and `BULK` at the top of the script.
 
 ---
 
@@ -89,7 +116,7 @@ Registers `check-version-bump.sh` as a git pre-commit hook in the consumer's rep
 The atomic-wiki plugin handles this automatically via its hooks:
 
 - `PostToolUse` on Write/Edit of `wiki/**/*.md` → `gen-index.sh`
-- `Stop` at end of turn → `lint.sh`
+- `Stop` at end of turn → `stop-hook.sh` (`lint.sh`, then the compile-debt check)
 - git pre-commit (installed by `/atomic-wiki:init`) → `check-version-bump.sh`
 
 If driving the repo manually:

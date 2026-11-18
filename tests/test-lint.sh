@@ -42,5 +42,21 @@ else
   echo "FAIL case4"; fail=1
 fi
 
-rm -rf "$t1" "$t2" "$t3" "$t4"
+# Case 5: compile debt -> an atom in no page and an atom newer than its page are listed in section 7.
+t5="$(mktemp -d)"; git -C "$t5" init -q
+mkdir -p "$t5/wiki/mcp" "$t5/atoms/mcp"
+printf -- '---\nid: mcp/a\nversion: 2\n---\n\nClaim.\n' > "$t5/atoms/mcp/a.md"
+printf -- '---\nid: mcp/b\nversion: 1\n---\n\nClaim.\n' > "$t5/atoms/mcp/b.md"
+printf -- '---\nid: mcp/c\nversion: 1\n---\n\nClaim.\n' > "$t5/atoms/mcp/c.md"
+printf '# Auth\n\n> s\n\nbody\n\n---\n*Compiled from atoms: mcp/a@1, mcp/c@1*\n' > "$t5/wiki/mcp/auth.md"
+( cd "$t5" && CLAUDE_PROJECT_DIR="$t5" bash "$LINT" >/dev/null 2>&1 )
+section="$(sed -n '/^## 7\. Compile Debt/,/^---$/p' "$t5/lint-report.md")"
+if grep -qF '`mcp/b`: in no page' <<<"$section" && grep -qF '`mcp/a`: changed since `mcp/auth`' <<<"$section" \
+  && ! grep -qF '`mcp/c`' <<<"$section"; then
+  echo "PASS case5"
+else
+  echo "FAIL case5"; fail=1
+fi
+
+rm -rf "$t1" "$t2" "$t3" "$t4" "$t5"
 exit $fail

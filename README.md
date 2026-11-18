@@ -46,7 +46,7 @@ After that, the five pipeline skills are available in any Claude Code session op
 Two plugin hooks run automatically in any wiki project:
 
 - **PostToolUse on `wiki/**/*.md` writes** — reruns `scripts/gen-index.sh` to keep `index.md` fresh.
-- **Stop (end of turn)** — reruns `scripts/lint.sh` for the fast programmatic lint pass.
+- **Stop (end of turn)** — reruns `scripts/lint.sh` for the fast programmatic lint pass. Once 8 or more atoms wait for a wiki page, Claude does not stop: it runs `/atomic-wiki:compile pending` and reports what it compiled. Above 40 you get a one-line message instead and run the compile when you choose.
 
 Both hooks no-op when the current working directory is not a wiki project (i.e., when `wiki/` does not exist at the repo root).
 

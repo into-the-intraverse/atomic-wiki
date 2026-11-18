@@ -34,6 +34,7 @@ It writes findings to `lint-report.md` at the repo root. Checks:
 - **Format violations** — first line not `# title`, path with uppercase or underscore, page not under a branch subfolder (error).
 - **Outdated markers** — temporal patterns that need verification (warning).
 - **Missing summaries** — no `> summary` line under the title (warning).
+- **Compile debt** — atoms in no page, and pages compiled from an older or deleted atom (warning). Clear it with `/atomic-wiki:compile pending`.
 
 If `lint.sh` reports errors (not just warnings), surface them and fix before moving to the LLM layer. If only warnings, continue.
 

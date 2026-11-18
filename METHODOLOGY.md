@@ -330,7 +330,7 @@ Wiki isn't done after the first build. Five continuous operations, each provided
 | `/atomic-wiki:lint` | periodic, or after large changes | Programmatic check (`lint.sh`) for ghost links, orphans, format violations; LLM check for contradictions, concept gaps, expired claims, weak orphans. Appends findings to `lint-report.md`. |
 | `/atomic-wiki:query` | answering a question | Read `index.md`, load relevant pages only, answer. Optionally write back the synthesis as a new atom or version bump. |
 
-The atomic-wiki plugin's hooks keep the housekeeping invisible: `gen-index.sh` runs after every wiki edit, `lint.sh` runs at the end of every turn. The git pre-commit hook is installed per-clone by `/atomic-wiki:init` — re-run init after cloning.
+The atomic-wiki plugin's hooks keep the housekeeping invisible: `gen-index.sh` runs after every wiki edit, `lint.sh` runs at the end of every turn, and atoms that pile up without a page get compiled automatically. The git pre-commit hook is installed per-clone by `/atomic-wiki:init` — re-run init after cloning.
 
 ---
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Wiki Lint — Programmatic Layer
 # Checks: ghost links, orphan pages, format violations, outdated markers, ghost image embeds,
-# missing summaries.
+# missing summaries, compile debt.
 # Output: lint-report.md at repo root.
 
 ROOT="$(git -C "${CLAUDE_PROJECT_DIR:-$PWD}" rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -194,6 +194,27 @@ for slug in $(echo "${!SLUGS[@]}" | tr ' ' '\n' | sort); do
 done
 
 if [ $FOUND_NO_SUMMARY -eq 0 ]; then
+  echo "None." >> "$REPORT"
+fi
+echo "" >> "$REPORT"
+
+# ─── 7. Compile Debt ───
+# Atoms no page was compiled from, and pages compiled from an older or deleted atom (debt.sh).
+# The Stop hook starts `/atomic-wiki:compile pending` once this list is long enough.
+echo "## 7. Compile Debt (atoms the wiki pages do not cover yet)" >> "$REPORT"
+echo "" >> "$REPORT"
+DEBT="$(bash "$(dirname "$0")/debt.sh")"
+
+if [ -n "$DEBT" ]; then
+  while IFS=' ' read -r kind atom page; do
+    case "$kind" in
+      uncompiled) echo "- \`$atom\`: in no page" >> "$REPORT" ;;
+      stale)      echo "- \`$atom\`: changed since \`$page\` was compiled" >> "$REPORT" ;;
+      gone)       echo "- \`$atom\`: deleted, still listed by \`$page\`" >> "$REPORT" ;;
+    esac
+    ((WARNINGS++))
+  done <<<"$DEBT"
+else
   echo "None." >> "$REPORT"
 fi
 echo "" >> "$REPORT"

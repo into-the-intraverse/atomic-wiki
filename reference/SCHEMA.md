@@ -158,7 +158,7 @@ Continue.
 - [[other-branch/related-page]] — one-line description
 
 ---
-*Compiled from atoms: branch/atom-slug-1, branch/atom-slug-2, ...*
+*Compiled from atoms: branch/atom-slug-1@1, branch/atom-slug-2@3, ...*
 ```
 
 ### Length
@@ -235,7 +235,7 @@ Read the corresponding skill's `SKILL.md` in the plugin when running each.
 
 The **atomic-wiki** plugin ships two hooks that handle this automatically:
 - `PostToolUse` on Write/Edit of `wiki/**/*.md` runs `gen-index.sh`.
-- `Stop` at end of turn runs `lint.sh`.
+- `Stop` at end of turn runs `lint.sh`, then sends Claude back to run `/atomic-wiki:compile pending` once 8 or more atoms wait for a page (`stop-hook.sh`). Above 40 it only tells you, because that is too much for the end of a turn.
 
 If you're driving the repo without Claude Code, run them yourself:
 

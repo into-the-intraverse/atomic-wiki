@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh\""
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/stop-hook.sh\""
           }
         ]
       }

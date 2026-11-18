@@ -29,4 +29,4 @@ As needed. Aim for 1500–2500 words total per page. If you cross 2500, consider
 - [[same-branch/related-page-two]] — one-line description
 
 ---
-*Compiled from atoms: `branch/atom-slug-1`, `branch/atom-slug-2`, `branch/atom-slug-3`*
+*Compiled from atoms: `branch/atom-slug-1@1`, `branch/atom-slug-2@1`, `branch/atom-slug-3@2`*
